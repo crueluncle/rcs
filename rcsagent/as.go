@@ -16,7 +16,6 @@ import (
 
 var tmpfiledir string = "scriptstmpfiledir"
 
-//6类原子请求实现Rpccallrequest接口
 func (seb *Script_Run_Req) Handle(res *RpcCallResponse) error {
 	log.Println("handle 1 request:RpcCallRequest ", seb)
 	//start := time.Now()
@@ -35,17 +34,17 @@ func (seb *Script_Run_Req) Handle(res *RpcCallResponse) error {
 	command := exec.Command(scriptfilepath, seb.ScriptArgs...)
 	var outstd, errstd bytes.Buffer
 	var resStderr string
-	command.Stderr = &errstd //定义外部脚本的标准错误输出
-	command.Stdout = &outstd //定义外网脚本的标准输出
+	command.Stderr = &errstd
+	command.Stdout = &outstd
 	//	log.Println("command:", command)
-	err := command.Run() //此函数返回的err只能标识脚本中最后一条可执行语句是否执行成功，并不代表整个脚本中间无报错,判断无意义;要根据标准错误中的内容来判断
-	if err != nil {      //调用内部异常，则将外部脚本执行结果置为错误
+	err := command.Run()
+	if err != nil {
 		resStderr = err.Error() + errstd.String()
 		log.Println("resStderr:", resStderr)
 	} else {
 		resStderr = errstd.String()
 	}
-	if resStderr == "" { //真正判断是否执行成功，无论是调用内部异常还是外部脚本有异常均可返回给调用方
+	if resStderr == "" {
 		res.Flag = true
 		res.Result = outstd.String()
 	} else {
@@ -140,7 +139,6 @@ func (seb *Rcs_HeartBeat_Req) SetFileUrl(newurl string) {
 
 }
 
-//定义对外的rpc服务名及方法：外界只需调用ModuleService.Run即自动执行相应原子请求各自的执行方法(多态)
 type ModuleService struct {
 }
 

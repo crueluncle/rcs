@@ -29,7 +29,7 @@ func (ma *masterapi) Serve() {
 			os.Exit(1)
 		}
 	}()
-	http.HandleFunc("/runtask", ma.runtask) //接收websever端传递过来的task执行态的json串,解析为task对象并发送给jobsvr,给调用方返回json结构
+	http.HandleFunc("/runtask", ma.runtask)
 
 	log.Println("Api Server start ok:", ma.listenaddr)
 	log.Fatal(http.ListenAndServe(ma.listenaddr, nil))
@@ -53,7 +53,7 @@ func (ma *masterapi) runtask(w http.ResponseWriter, r *http.Request) {
 		if e := r.Body.Close(); e != nil {
 			log.Println(e)
 		}
-		if task.Runid != "" { //调用者传过来的必须是"",然后master生存唯一的runid回应给调用者
+		if task.Runid != "" {
 			log.Println("original runid is invalid!")
 			rs.ErrStatus = "original runid is invalid!"
 			rs.EncodeJson(w)

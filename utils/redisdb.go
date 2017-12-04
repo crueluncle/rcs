@@ -21,9 +21,8 @@ type GetAgentResultFromRedisResp struct {
 	Res       string
 }
 
-//redis连接池机制,当并发量大于最大rmaxactive时,可能会出现"连接池"满的报错,只能等待其它并发进程释放连接资源后续的请求才能继续;另并发量较大时会导致redis服务端time_wait较多,O层面应配置连接的快速回收
 func Newredisclient(Redisconstr, Redispass string, RedisDB, RMaxIdle, RMaxActive int) (*redis.Pool, error) {
-	RedisClient := &redis.Pool{ //以连接池的方式进行redis操作
+	RedisClient := &redis.Pool{
 		Dial: func() (redis.Conn, error) {
 			//c, err := redis.Dial("tcp", Redisconstr, redis.DialPassword(Redispass))
 			c, err := redis.Dial("tcp", Redisconstr)
@@ -45,7 +44,7 @@ func Newredisclient(Redisconstr, Redispass string, RedisDB, RMaxIdle, RMaxActive
 	}
 	return RedisClient, nil
 }
-func GetSFnumsFromRedis(uuid string, rc redis.Conn) (rs GetSFnumsFromRedisResp) { //通过uuid获取成功失败数量,用于前端刷新
+func GetSFnumsFromRedis(uuid string, rc redis.Conn) (rs GetSFnumsFromRedisResp) {
 	defer rc.Close()
 	var err error
 	rs.Succ, err = redis.Int(rc.Do("hlen", uuid+":true"))
@@ -58,7 +57,7 @@ func GetSFnumsFromRedis(uuid string, rc redis.Conn) (rs GetSFnumsFromRedisResp) 
 	}
 	return rs
 }
-func GetResultFromRedis(uuid string, rc redis.Conn) (rs GetResultFromRedisResp) { //通过uuid拉取所有agent结果信息,用于前端刷新
+func GetResultFromRedis(uuid string, rc redis.Conn) (rs GetResultFromRedisResp) {
 	defer rc.Close()
 	var err error
 	rs.Succ, err = redis.StringMap(rc.Do("hgetall", uuid+":true"))
@@ -71,7 +70,7 @@ func GetResultFromRedis(uuid string, rc redis.Conn) (rs GetResultFromRedisResp) 
 	}
 	return rs
 }
-func GetAgentResultFromRedis(uuid, ip string, rc redis.Conn) (rs GetAgentResultFromRedisResp) { //通过uuidh和ip拉取某个agent结果信息
+func GetAgentResultFromRedis(uuid, ip string, rc redis.Conn) (rs GetAgentResultFromRedisResp) {
 	defer rc.Close()
 	var err error
 	rs.Res, err = redis.String(rc.Do("hget", uuid+":true", ip))

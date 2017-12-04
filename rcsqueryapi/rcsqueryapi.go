@@ -1,9 +1,3 @@
-//redis查询api,调用方通过rid/ip来轮询task结果
-/*
- GET   http://127.0.0.1:9999/getsfnumsfromredis?uuid=xxxx       		//查询任务成功,失败agent数量,给调用方返回json结构
- GET   http://127.0.0.1:9999/getagentresultfromredis?uuid=xxxx&ip=yyyy      		//查询任务指定agent结果,给调用方返回json结构
- GET   http://127.0.0.1:9999/getresultfromredis?uuid=xxxx             		//查询任务所有agent结果,给调用方返回json结构
-*/
 package main
 
 import (
@@ -19,12 +13,12 @@ import (
 )
 
 var (
-	apiServer_addr, //对外提供服务需要监听的地址
-	redisconstr, //redis连接地址
-	redispass string //redis认证密码
-	redisDB, //redis DB
-	rMaxIdle, //redis连接池最大空闲连接
-	rMaxActive int //redis连接池最大连接数
+	apiServer_addr,
+	redisconstr,
+	redispass string
+	redisDB,
+	rMaxIdle,
+	rMaxActive int
 )
 
 var logfile *os.File
@@ -68,11 +62,11 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-	http.HandleFunc("/gettasksfnums", getsfnumsfromredis)          //给调用方返回json结构
-	http.HandleFunc("/getagentresult", getagentresultfromredis)    //给调用方返回json结构
-	http.HandleFunc("/getagentresultinsucc", getagentresultinsucc) //给调用方返回json结构
-	http.HandleFunc("/getagentresultinfail", getagentresultinfail) //给调用方返回json结构
-	http.HandleFunc("/gettaskresult", getresultfromredis)          //给调用方返回json结构
+	http.HandleFunc("/gettasksfnums", getsfnumsfromredis)
+	http.HandleFunc("/getagentresult", getagentresultfromredis)
+	http.HandleFunc("/getagentresultinsucc", getagentresultinsucc)
+	http.HandleFunc("/getagentresultinfail", getagentresultinfail)
+	http.HandleFunc("/gettaskresult", getresultfromredis)
 
 	log.Println("Start rekapi...")
 	log.Println("RcshttpAPI:query ApiServer start...:", apiServer_addr)
@@ -80,9 +74,7 @@ func main() {
 }
 
 func getsfnumsfromredis(w http.ResponseWriter, r *http.Request) {
-	/*访问示例:http://115.182.81.164:9999/gettasksfnums?uuid=819399f5-bab5-11e6-a24a-40a8f023614c
-	返回:json串
-	*/
+
 	log.Println("Got request:", r.URL)
 	uuid := r.URL.Query().Get("uuid")
 	if len(uuid) != 36 {
@@ -97,9 +89,7 @@ func getsfnumsfromredis(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func getagentresultfromredis(w http.ResponseWriter, r *http.Request) {
-	/*访问示例:http://115.182.81.164:9999/getagentresult?uuid=819399f5-bab5-11e6-a24a-40a8f023614c&ip=127.0.0.1
-	返回:json串
-	*/
+
 	log.Println("Got request:", r.URL)
 	uuid := r.URL.Query().Get("uuid")
 	ip := r.URL.Query().Get("ip")
@@ -113,9 +103,7 @@ func getagentresultfromredis(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func getagentresultinsucc(w http.ResponseWriter, r *http.Request) {
-	/*访问示例:http://115.182.81.164:9999/getagentresult?uuid=819399f5-bab5-11e6-a24a-40a8f023614c&ip=127.0.0.1
-	返回:json串
-	*/
+
 	log.Println("Got request:", r.URL)
 	uuid := r.URL.Query().Get("uuid")
 	ip := r.URL.Query().Get("ip")
@@ -129,9 +117,7 @@ func getagentresultinsucc(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func getagentresultinfail(w http.ResponseWriter, r *http.Request) {
-	/*访问示例:http://115.182.81.164:9999/getagentresult?uuid=819399f5-bab5-11e6-a24a-40a8f023614c&ip=127.0.0.1
-	返回:json串
-	*/
+
 	log.Println("Got request:", r.URL)
 	uuid := r.URL.Query().Get("uuid")
 	ip := r.URL.Query().Get("ip")
@@ -145,9 +131,7 @@ func getagentresultinfail(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func getresultfromredis(w http.ResponseWriter, r *http.Request) {
-	/*访问示例:http://115.182.81.164:9999/gettaskresult?uuid=819399f5-bab5-11e6-a24a-40a8f023614c
-	返回:json串
-	*/
+
 	log.Println("Got request:", r.URL)
 	uuid := r.URL.Query().Get("uuid")
 	rs := utils.GetResultFromRedis(uuid, RedisClient.Get())

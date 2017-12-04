@@ -1,12 +1,5 @@
 package main
 
-/*
-1.TH_JobsvrManage  管理jobsvr:将连接上来的jobsvr保存起来，并周期性探测状态；
-2.TH_RecvRespFromJobsvr 并从jobsvr中循环接收响应消息，保存到redis:redis作为master内部临时数据存储方式,无需持久化,1天自动过期;数据的持久化由前端调用者自行处理
-3.TH_RcshttpAPI 提供外部接口单独协程,整个rek系统对外只有1个api
-	 POST  http://127.0.0.1:9999/runtask                       //提交任务json串到master,解析为为Rcstask对象并发送给jobsvr,给调用方返回json结构
-4.整套系统是通过ip地址来唯一标识OS,因此对于有多个孤岛内网的环境,须满足内网ip唯一性(统一规划)
-*/
 import (
 	"encoding/gob"
 	"io"
@@ -22,14 +15,13 @@ import (
 )
 
 var (
-	masterAddr, //master与jobsvr控制连接需要监听的地址
-	apiServer_addr, //master对外提供task提交服务需要监听的地址
-	redisconstr, //redis连接地址
-	redispass string //redis认证密码
-	redisDB, //redis DB
-	rMaxIdle, //redis连接池最大空闲连接
-	rMaxActive int //redis连接池最大连接数
-
+	masterAddr,
+	apiServer_addr,
+	redisconstr,
+	redispass string
+	redisDB,
+	rMaxIdle,
+	rMaxActive int
 )
 var logfile *os.File
 var redisClient *redis.Pool

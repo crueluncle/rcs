@@ -52,7 +52,7 @@ func (am agentMngSvr) HandleConn(conn *net.TCPConn) error {
 		}
 	}()
 	//ip := strings.Split(conn.RemoteAddr().String(), ":")[0]
-	ip := conn.RemoteAddr().String() //方便测试并发性能，暂时改为注册格式 ip:port
+	ip := conn.RemoteAddr().String()
 	if ai := am.Getagent(ip); ai != nil {
 		if err := conn.Close(); err != nil {
 			return err
@@ -68,7 +68,7 @@ func (am agentMngSvr) HandleConn(conn *net.TCPConn) error {
 	var argss rcsagent.RpcCallRequest = args
 	var err error
 	for {
-		err = rcli.Call("ModuleService.Run", &argss, resp) //gob对interface类型编解码时,encode和decode需传interface的指针进去
+		err = rcli.Call("ModuleService.Run", &argss, resp)
 		if err != nil {
 			break
 		}

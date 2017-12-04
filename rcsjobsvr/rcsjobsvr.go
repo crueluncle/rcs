@@ -1,11 +1,5 @@
 package main
 
-/*4个goroutine
-TH_AgentManage() 用于管理agent的注册、注销和周期性心跳检测
-TH_masterManage() 与master建立一条tcp连接用于与master的交互,并周期性心跳检测
-TH_HandleTasks 循环读取Tasks任务队列,处理每一个任务
-TH_FileSvr 提供文件下载服务,http服务
-*/
 import (
 	"encoding/gob"
 	"io"
@@ -19,17 +13,18 @@ import (
 	"sync"
 )
 
-const filecachedir string = `JobsrvFileCacheDir` //文件缓存服务器根目录
+const filecachedir string = `JobsrvFileCacheDir`
+
 var (
-	routeId     uint16 //for identify  this jobsvr,must be uniq between all jobsvrs ,less than 65535
-	rpcTimeOut, //rpc调用超时时间:包括rpcclient与rpcserver之间网络通信的时间、rpc服务函数本身的执行时间;FYI:对一个rpcclient的并发rpc调用实际是串行执行的,因多个goroutine对同一个net.conn的数据传输是串行化的，因此每次rpc调用的时间消耗实际是不断增长的
-	agentCKT, //agent状态检测时间间隔(1-10s之间的随机时间),agent量较多，采用随机检测避免风暴
-	masterCKT, //master状态检测时间间隔(s),jobsvr数量较少,10s高频检测,保证一定的实时可用性
-	taskLength int //任务缓冲队列长度
-	jobsvrAddr, //与agent交互jobsvr需要监听的地址,跑rpc
-	masterAddr, //master地址
-	masterSyncAddr, //master路由同步地址
-	filecacheAddr string //rekjobsvr传输文件给agent,ip只能是0.0.0.0,跑http,用于替换fileregistryip
+	routeId uint16 //for identify  this jobsvr,must be uniq between all jobsvrs ,less than 65535
+	rpcTimeOut,
+	agentCKT,
+	masterCKT,
+	taskLength int
+	jobsvrAddr,
+	masterAddr,
+	masterSyncAddr,
+	filecacheAddr string
 )
 var logfile *os.File
 
