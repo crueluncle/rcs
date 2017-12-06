@@ -1,5 +1,9 @@
 package main
 
+//创建一个services，业务逻辑代码放到run()函数中
+//可通过test.exe install/uninstall来安装/卸载服务，安装后可通过 start stop restart命令来控制
+//直接双击则跑在前端
+//日志写到文件中
 import (
 	"log"
 	"os"
@@ -17,10 +21,11 @@ import (
 )
 
 var (
-	rconT      int
-	jobsvrAddr string
+	rconT      int    //agent断开jobsvr连接后，在多长的随机时间内重连jobsvr,agent数量可能较多，随机重连避免风暴
+	jobsvrAddr string // jobsvr地址
+	//tmpfiledir string //脚本文件临时位置
 )
-var logf *os.File
+var logf *os.File //将start/stop/run中逻辑代码的日志记录到文件
 
 func init() {
 	gob.Register(&rcsagent.Script_Run_Req{})
@@ -49,6 +54,7 @@ func init() {
 }
 
 func main() {
+	//在此处将标准log的输出定位到一个文件，应每次执行test.exe [cmd]时会重新打开文件，文件指针会重新指向文件开头，因此为保持日志连续性，在调用log的函数中需seek到文件末尾或者以追加的方式打开
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println("Panic info is: ", err, string(debug.Stack()))

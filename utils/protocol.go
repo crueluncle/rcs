@@ -1,3 +1,4 @@
+//通讯协议处理,定义了一种通用性文本协议
 package utils
 
 import (
@@ -5,6 +6,9 @@ import (
 	"encoding/binary"
 )
 
+/*
+头部标记--消息体长度--消息体(业务消息内容)
+*/
 type ProtocolAnalyzer interface {
 	Enpack([]byte) []byte
 	Depack([]byte, chan<- []byte)
@@ -17,21 +21,23 @@ func NewProtocolAnalyzer() ProtocolAnalyzer {
 func DefaultProtocal() ProtocolAnalyzer {
 	return &myProtocal{
 		headerflag:   []byte(`\^\$`),
-		constmlength: 4,
+		constmlength: 4, //默认最大支持int32字节长度的消息
 		lagecyMsg:    make([]byte, 0),
 	}
 }
 
 type myProtocal struct {
 	headerflag   []byte
-	constmlength int
-	lagecyMsg    []byte
+	constmlength int    //消息体长度字段的长度(int32)
+	lagecyMsg    []byte //仅解包会用到
 }
 
+//封包
 func (dp *myProtocal) Enpack(message []byte) []byte {
 	return append(append(dp.headerflag, IntToBytes(len(message))...), message...)
 }
 
+//解包
 func (dp *myProtocal) Depack(srcdata []byte, pkgChan chan<- []byte) {
 	length := len(srcdata)
 	constheaderlength := len(dp.headerflag)
@@ -59,10 +65,12 @@ func (dp *myProtocal) Depack(srcdata []byte, pkgChan chan<- []byte) {
 	dp.lagecyMsg = srcdata[i:]
 }
 
+//获取截断消息
 func (dp *myProtocal) GetlagecyMsg() []byte {
 	return dp.lagecyMsg
 }
 
+//整形转换成字节
 func IntToBytes(n int) []byte {
 	x := int32(n)
 	bytesBuffer := bytes.NewBuffer([]byte{})
@@ -70,6 +78,7 @@ func IntToBytes(n int) []byte {
 	return bytesBuffer.Bytes()
 }
 
+//字节转换成整形
 func BytesToInt(b []byte) int {
 	bytesBuffer := bytes.NewBuffer(b)
 	var x int32

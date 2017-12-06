@@ -54,7 +54,7 @@ func (jsm jobsvrManager) HandleConn(conn *net.TCPConn) error {
 	defer connrwer.Close()
 
 	ip := strings.Split(conn.RemoteAddr().String(), ":")[0]
-	if _, ok := jsm.jobsvrCtn[ip]; ok {
+	if _, ok := jsm.jobsvrCtn[ip]; ok { //不允许jobsvr ip重复，包括机器本身ip冲突或者1台机器上起多个jobsvr进程
 		if err := conn.Close(); err != nil {
 			return err
 		}
@@ -116,14 +116,14 @@ func (jsm *jobsvrManager) broadcastTask() error {
 func (jsm *jobsvrManager) saveResponse() {
 
 	for msg := range jsm.msgchan {
-		if _, ok := msg.(*utils.KeepaliveMsg); ok {
-		} else if res, ok := msg.(*utils.RcsTaskResp); ok {
+		if _, ok := msg.(*utils.KeepaliveMsg); ok { //结接收到心跳消息,什么也不干
+		} else if res, ok := msg.(*utils.RcsTaskResp); ok { //接收到响应消息
 			var i int
 			for i = 0; i < 3; i++ {
 				e := utils.Writeresponserun(res, jsm.f())
 				if e == nil {
 					break
-				} else {
+				} else { //如果写失败,重试3次
 					//log.Println("%s,%s,%d response Write2redis failed,continue:", e, res.Runid)
 					time.Sleep(time.Second)
 					continue

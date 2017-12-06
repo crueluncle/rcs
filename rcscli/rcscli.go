@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-type FileInfo struct {
+type FileInfo struct { //api返回给调用者的消息
 	//ErrStatus   string
 	Url, Md5str string
 	Size        int64
@@ -42,8 +42,8 @@ const (
 	getagentresultApiUrl       = `http://127.0.0.1:9528/getAgentResult`
 	getagentresultinsuccApiUrl = `http://127.0.0.1:9528/getagentresultinsucc`
 	getagentresultinfailApiUrl = `http://127.0.0.1:9528/getagentresultinfail`
-	TaskHandleTimeout          = 10
-	fileregistry               = `http://127.0.0.1:8096/upload`
+	TaskHandleTimeout          = 10                             //一个任务task执行默认超时时间
+	fileregistry               = `http://127.0.0.1:8096/upload` //文件仓库上传地址
 )
 
 var logfile *os.File

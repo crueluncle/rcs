@@ -1,4 +1,4 @@
-package rcsagent
+package rcsagent //定义共用对象及函数
 
 import (
 	"crypto/md5"
@@ -13,26 +13,27 @@ import (
 )
 
 const ( //支持的原子操作类型
-	ScriptExec uint8 = iota
-	FilePush
-	RcsAgentRestart
-	RcsAgentUpgrade
-	RcsAgentStop
-	RcsAgentHeartBeat
+	ScriptExec        uint8 = iota //脚本执行
+	FilePush                       //文件分发
+	RcsAgentRestart                //agent重启
+	RcsAgentUpgrade                //agent升级
+	RcsAgentStop                   //agent退出
+	RcsAgentHeartBeat              //agent心跳
 )
 
 //-----------------------------------------------
-type RpcCallRequest interface {
+type RpcCallRequest interface { //表示一个原子请求
 	Handle(*RpcCallResponse) error
 	GetFileUrl() string
 	GetFileMd5() string
 	SetFileUrl(string)
 }
-type RpcCallResponse struct {
+type RpcCallResponse struct { //表示一个原子请求的响应
 	Flag   bool
 	Result string
 }
 
+//以下定义6种原子请求类,原子操作基本固定,不会增删
 type Script_Run_Req struct {
 	FileUrl, FileMd5 string
 	ScriptArgs       []string
@@ -52,7 +53,8 @@ type Rcs_HeartBeat_Req struct {
 }
 
 func Downloadfilefromurl(srcfileurl, srcfilemd5, dstdir string) error {
-
+	//目标文件名与url中uri一致，若文件存在且md5一致则不会下载
+	//	log.Println("srcfileurl:", srcfileurl, "dstdir:", dstdir)
 	u, e := url.Parse(srcfileurl)
 	if e != nil {
 		return e

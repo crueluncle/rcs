@@ -1,3 +1,36 @@
+//define the tcpServer and tcpClient framwork...//
+/* bellow shows how to make a tcpServer use TServer framwork,and the tcpClient is similar
+type mysvr struct { //定义业务服务器
+	A     string
+	B     int
+	msgch chan interface{}
+}
+
+func (ms mysvr) HandleConn(conn *net.TCPConn) error {//定义业务处理器,满足THandler接口：任意业务处理逻辑写在这个方法中
+	codecer := rek.NewCodecer(conn)
+	defer codecer.Close()
+	go func() error { //handle msg and send msg
+		for v := range ms.msgch {
+			log.Println("Got a msg from client:", v, "echo msg")
+			if e := codecer.Write(v); e != nil {
+				log.Println(e)
+				return e
+			}
+		}
+		return nil
+	}()
+	return codecer.Read(ms.msgch) //read msg from conn
+}
+
+func main() {
+	ms := mysvr{msgch: make(chan interface{}, 32)}
+	if _, ts := rek.NewTServer("127.0.0.1:22222", ms); ts != nil {
+		log.Fatalln(ts.Serve())
+	}
+
+}
+
+*/
 package utils
 
 import (
