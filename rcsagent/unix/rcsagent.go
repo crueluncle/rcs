@@ -1,8 +1,5 @@
 package main
 
-//创建一个services，业务逻辑代码放到run()函数中
-//可通过test.exe install/uninstall来安装/卸载服务，安装后可通过 start stop restart命令来控制
-//直接双击则跑在前端
 //日志写到文件中
 import (
 	"log"

@@ -148,19 +148,6 @@ func (s ModuleService) Run(seb RpcCallRequest, res *RpcCallResponse) error {
 	return seb.Handle(res)
 }
 
-func settmpdir() error {
-	file, e := exec.LookPath(os.Args[0])
-	if e != nil {
-		return e
-	}
-	path, e := filepath.Abs(file)
-	if e != nil {
-		return e
-	}
-	tmpfiledir = filepath.Join(filepath.Dir(path), tmpfiledir)
-	return nil
-}
-
 func StartRPCserver(conn *net.TCPConn) error {
 	defer conn.Close()
 	//log.Println("tmpfiledir:", tmpfiledir)
@@ -177,4 +164,16 @@ func init() {
 	if e != nil {
 		log.Fatalln(e)
 	}
+}
+func settmpdir() error {
+	file, e := exec.LookPath(os.Args[0])
+	if e != nil {
+		return e
+	}
+	path, e := filepath.Abs(file)
+	if e != nil {
+		return e
+	}
+	tmpfiledir = filepath.Join(filepath.Dir(path), tmpfiledir)
+	return nil
 }
