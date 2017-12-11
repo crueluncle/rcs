@@ -150,7 +150,7 @@ func (f File) Mreplace(seb File_mreplace_req, res *Atomicresponse) error {
 
 	if len(files) == 0 {
 		res.Flag = true
-		res.Result = "No files matched"
+		res.Result = "No matched files"
 	}
 
 	for _, file := range files {
