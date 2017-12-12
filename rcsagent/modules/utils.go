@@ -119,7 +119,7 @@ func Downloadfilefromurl(srcfileurl, srcfilemd5, dstdir string) error {
 func Cpall(sfilepath, dfilepath string, withoutdir bool) error { //文件、是目录则递归、存在则默认覆盖
 	/*
 		1.sfilepath是文件则将dfilepath视为文件
-		2.sfilepath是目录,dfilepath视为目录，且带目录名及目录下所有内容cp到dfilepath目录下 sfilepath--->dfilepath/sfilepath
+		2.sfilepath是目录,dfilepath视为目录，且默认带目录名及目录下所有内容cp到dfilepath目录下 sfilepath--->dfilepath/sfilepath
 
 	*/
 	ex, dr, err := Isexistdir(sfilepath)

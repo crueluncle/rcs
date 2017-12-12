@@ -4,21 +4,19 @@ import (
 	"fmt"
 	"log"
 	"rcs/rcsagent/modules"
+	//	"time"
 )
 
 func main() {
 
 	log.SetFlags(log.Llongfile)
 
-	req := new(modules.File_mreplace_req)
-	req.Sfiledir = `D:\carey`
-	req.Filenamepatternstr = "1"
-	req.Patternstr = "weiny"
-	req.Repltext = "carey"
-
+	req := new(modules.File_del_req)
+	req.Sfilepath = `d:\carey111.txt`
+	req.Wobak = true
 	resp := new(modules.Atomicresponse)
 	f := new(modules.File)
-	if e := f.Mreplace(*req, resp); e != nil {
+	if e := f.Del(*req, resp); e != nil {
 		log.Fatalln(e)
 	}
 	log.Println(resp.Flag)
