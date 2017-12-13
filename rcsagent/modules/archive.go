@@ -1,5 +1,32 @@
 package modules
 
-//内置的执行模块
-type Archive struct { //Archive模块,压缩文件或目录,方法:Zip,Unzip,Tar,Untar,Gzip,Gunzip,Rar,Unrar
+import (
+	//"archive/tar"
+	"archive/zip"
+	"compress/gzip"
+	//"os"
+)
+
+type Archive struct {
+	/*inner module 'Archive',for file or directory archive,function:
+	Zip()
+	Unzip()
+	Tar()
+	Untar()
+	Gzip()
+	Gunzip()
+	Rar()
+	Unrar()
+	*/
+}
+type Archive_zip_req struct {
+}
+type Archive_unzip_req struct {
+}
+
+func (ar Archive) Zip() {
+
+}
+func (ar Archive) Unzip() {
+
 }
