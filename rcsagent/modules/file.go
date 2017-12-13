@@ -13,52 +13,61 @@ import (
 	"time"
 )
 
-//内置的执行模块
-type File struct { //File模块,对文件或目录的操作,方法:Push,Pull,Cp,Del,Grep,Replace,Mreplace,Md5sum,Ckmd5sum
+type File struct {
+	/*inner execution module 'File',implements some functions of operating file or directory,bellows:
+	Push()
+	Pull()
+	Cp()
+	Del()
+	Grep()
+	Replace()
+	Mreplace()
+	Md5sum()
+	Ckmd5sum()
+	*/
 }
-type File_push_req struct { //只支持文件
+type File_push_req struct { //only support single file
 	Sfileurl, Sfilemd5 string
 	DstPath            string
 }
-type File_pull_req struct { //只支持文件
+type File_pull_req struct { //only support single file
 	Sfilepath string
 	Dstdir    string
 }
-type File_cp_req struct { //是目录则默认递归,存在则默认覆盖
-	Sfilepath string
-	Dfilepath string
-	Wodir     bool //目录复制时生效,是否不带Sfilepath中最后的目录名,false:带，true:不带
+type File_cp_req struct {
+	Sfilepath string //recursive if it`s a directory,
+	Dfilepath string //if exists,overwrite
+	Wodir     bool   //only used when Sfilepath is a directory,false:copy the whole directory and it`s bellows,true:only copy the directory`s bellows
 }
-type File_del_req struct { //是目录则默认递归
-	Sfilepath string
-	Wobak     bool //without bak 是否不创建备份
+type File_del_req struct {
+	Sfilepath string //recursive if it`s a directory
+	Wobak     bool   //without backup,false:with backup,true:without backup
 }
 type File_grep_req struct {
 	Sfilepath  string
-	Patternstr string //正则表达式
+	Patternstr string //regular expression
 }
-type File_replace_req struct { //单文件,正则表达式全文替换
-	Sfilepath  string
-	Patternstr string //正则表达式
+type File_replace_req struct {
+	Sfilepath  string //must be single file,replace the whole file
+	Patternstr string //regular expression
 	Repltext   string
 }
-type File_mreplace_req struct { //指定目录下,匹配指定文件名规则的所有文件,做全文替换,创建备份
-	Sfiledir           string
-	Filenamepatternstr string
-	Patternstr         string //正则表达式
+type File_mreplace_req struct {
+	Sfiledir           string //specify directory
+	Filenamepatternstr string //specify the filename regular expression in the 'Sfiledir' field
+	Patternstr         string //regular expression
 	Repltext           string
 }
-type File_md5sum_req struct { //是目录,则计算目录下所有文件的md5
-	Sfilepath string
+type File_md5sum_req struct {
+	Sfilepath string //if directory,compute the md5sum of all the files in the directory
 }
 type File_ckmd5sum_req struct { //similar to md5sum -c md5file
 	Md5filepath string
 }
 
 func (f File) Push(seb File_push_req, res *Atomicresponse) error {
-	//log.Println("handle 1 request:File_Push_Req ", seb)
+	//download file from remote,and check the md5sum
 	if err := Downloadfilefromurl(seb.Sfileurl, seb.Sfilemd5, seb.DstPath); err != nil {
-		//log.Println("downloadfilefromjobsvr:", err)
 		res.Flag = false
 		res.Result = err.Error()
 		return err
@@ -68,20 +77,62 @@ func (f File) Push(seb File_push_req, res *Atomicresponse) error {
 	return nil
 }
 func (f File) Pull(seb File_pull_req, res *Atomicresponse) error {
+	//upload file to the specified remote
 	return nil
 }
 func (f File) Cp(seb File_cp_req, res *Atomicresponse) error {
-	err := Cpall(seb.Sfilepath, seb.Dfilepath, seb.Wodir)
-	if err != nil {
+	/*
+		copy file or directory from source to destination , overwrite
+		1.if source is a single file,just copy to the named destination file , overwrite
+		2.if source is a directory,recursive copy the all files with the directory or not,determined by the 'Wodir' filed
+	*/
+	withoutdir := seb.Wodir
+	sfilepath := seb.Sfilepath
+	dfilepath := seb.Dfilepath
+	ex, dr, err := Isexistdir(sfilepath)
+	if !ex {
 		res.Flag = false
 		res.Result = err.Error()
 		return err
 	}
-	res.Flag = true
-	res.Result = "success!"
+	if !dr {
+		err := cpfile(sfilepath, dfilepath)
+		if err != nil {
+			res.Flag = false
+			res.Result = err.Error()
+			return err
+		}
+		res.Flag = true
+		res.Result = "success!"
+	} else { //is a directory ,recursive
+		wf := func(path string, f os.FileInfo, err error) error {
+			if f == nil {
+				return err
+			}
+			if f.IsDir() {
+				return nil
+			}
+			if withoutdir { //just copy the sfilepath`s bellows
+				return cpfile(path, filepath.Join(dfilepath, strings.TrimPrefix(path, sfilepath)))
+			} else { //copy the directory 'sfilepath' and it`s bellows
+				return cpfile(path, filepath.Join(dfilepath, strings.TrimPrefix(path, filepath.Clean(sfilepath+`/../`))))
+			}
+		}
+		if err := filepath.Walk(sfilepath, wf); err != nil {
+			res.Flag = false
+			res.Result = err.Error()
+			return err
+		}
+		res.Flag = true
+		res.Result = "success!"
+	}
 	return nil
 }
 func (f File) Del(seb File_del_req, res *Atomicresponse) error {
+	/*
+		delete the specified file or directory,depends on  the 'Wobak' filed,do backup or not,
+		'backup and delete' is just call 'os.rename' function
+	*/
 	if seb.Wobak { //without bak
 		err := os.RemoveAll(seb.Sfilepath)
 		if err != nil {
@@ -94,20 +145,6 @@ func (f File) Del(seb File_del_req, res *Atomicresponse) error {
 	} else { //with bak
 		t := time.Now().Unix()
 		dfilepath := seb.Sfilepath + `-bk` + strconv.FormatInt(t, 10)
-		/*//bakup first
-		err := Cpall(seb.Sfilepath, dfilepath, true)
-		if err != nil {
-			res.Flag = false
-			res.Result = err.Error()
-			return err
-		}
-		//then delete
-		err = os.RemoveAll(seb.Sfilepath)
-		if err != nil {
-			res.Flag = false
-			res.Result = err.Error()
-			return err
-		}*/
 		err := os.Rename(seb.Sfilepath, dfilepath) //call os.rename for backup and delete
 		if err != nil {
 			res.Flag = false
@@ -121,6 +158,7 @@ func (f File) Del(seb File_del_req, res *Atomicresponse) error {
 	return nil
 }
 func (f File) Grep(seb File_grep_req, res *Atomicresponse) error {
+	//like linux 'grep' command
 	fd, err := os.Open(seb.Sfilepath)
 	if err != nil {
 		res.Flag = false
@@ -142,14 +180,14 @@ func (f File) Grep(seb File_grep_req, res *Atomicresponse) error {
 	return nil
 }
 func (f File) Replace(seb File_replace_req, res *Atomicresponse) error {
-	//ioutil.ReadFile read the hole content to  memory once,that`s a risk point for a 'huge file'
+	//replace the Patternstr of specified file to relptext,like sed -i s/Patternstr/relptext/g file
 	fi, err := os.Stat(seb.Sfilepath)
 	if err != nil {
 		res.Flag = false
 		res.Result = err.Error()
 		return err
 	}
-	content, err := ioutil.ReadFile(seb.Sfilepath)
+	content, err := ioutil.ReadFile(seb.Sfilepath) //ioutil.ReadFile read the hole content to  memory once,that`s a risk point for a 'huge file'
 	if err != nil {
 		res.Flag = false
 		res.Result = err.Error()
@@ -173,6 +211,10 @@ func (f File) Replace(seb File_replace_req, res *Atomicresponse) error {
 	return nil
 }
 func (f File) Mreplace(seb File_mreplace_req, res *Atomicresponse) error {
+	/*replace the Patternstr of the succesive match files in a directory to relptext,this means that:
+	1.find the match files in a directory
+	2.replace there files
+	*/
 	err, files := Listmatchfiles(seb.Sfiledir, seb.Filenamepatternstr)
 	if err != nil {
 		res.Flag = false
@@ -191,7 +233,7 @@ func (f File) Mreplace(seb File_mreplace_req, res *Atomicresponse) error {
 
 	for _, file := range files {
 		req.Sfilepath = file
-		if err := f.Replace(*req, eachres); err != nil { //可能部分成功,需输出信息
+		if err := f.Replace(*req, eachres); err != nil { //may partly return
 			return err
 		}
 		res.Result += eachres.Result
@@ -200,6 +242,7 @@ func (f File) Mreplace(seb File_mreplace_req, res *Atomicresponse) error {
 	return nil
 }
 func (f File) Md5sum(seb File_md5sum_req, res *Atomicresponse) error {
+	//compute the md5sum of the specified file ,or all files in a directory
 	// output format : RWOSFR2FFSDFADF898DF:::/tmp/test/sdf.ini
 	ex, dr, err := Isexistdir(seb.Sfilepath)
 	if !ex {
@@ -236,6 +279,7 @@ func (f File) Md5sum(seb File_md5sum_req, res *Atomicresponse) error {
 	return nil
 }
 func (f File) Ckmd5sum(seb File_ckmd5sum_req, res *Atomicresponse) error {
+	//check the md5sum according to a md5file,like md5sum -c file
 	/* the md5file format :
 	RWOSFR2FFSDFADF898DF:::/tmp/test/sdf.ini
 	RWOSFR2FFSDFADF898DF:::/tmp/test/set.sh

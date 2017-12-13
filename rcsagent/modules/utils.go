@@ -8,8 +8,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -116,38 +119,6 @@ func Downloadfilefromurl(srcfileurl, srcfilemd5, dstdir string) error {
 		return errors.New("md5sum not matched")
 	}
 }
-func Cpall(sfilepath, dfilepath string, withoutdir bool) error { //文件、是目录则递归、存在则默认覆盖
-	/*
-		1.sfilepath是文件则将dfilepath视为文件
-		2.sfilepath是目录,dfilepath视为目录，且默认带目录名及目录下所有内容cp到dfilepath目录下 sfilepath--->dfilepath/sfilepath
-
-	*/
-	ex, dr, err := Isexistdir(sfilepath)
-	if !ex {
-		return err
-	}
-	if !dr {
-		return cpfile(sfilepath, dfilepath)
-	} else { //是目录，递归cpfile
-		wf := func(path string, f os.FileInfo, err error) error {
-			if f == nil {
-				return err
-			}
-			if f.IsDir() {
-				return nil
-			}
-			if withoutdir { //不带目录名复制
-				return cpfile(path, filepath.Join(dfilepath, strings.TrimPrefix(path, sfilepath)))
-			} else { //带目录名复制
-				return cpfile(path, filepath.Join(dfilepath, strings.TrimPrefix(path, filepath.Clean(sfilepath+`/../`))))
-			}
-		}
-		if err := filepath.Walk(sfilepath, wf); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 func cpfile(sfilepath, dfilepath string) error {
 	if err := os.MkdirAll(filepath.Dir(dfilepath), 0777); err != nil {
 		return err
@@ -226,4 +197,73 @@ func Listmatchfiles(dirname string, filenamepattern string) (error, []string) { 
 		return err, nil
 	}
 	return nil, filelist
+}
+
+func restartos(delay bool, delaysecond int64) error {
+	switch runtime.GOOS {
+	case "linux":
+		if delay && delaysecond > 0 {
+			if err := exec.Command("shutdown", "-r", `+`, strconv.FormatInt(delaysecond/60, 10)).Run(); err != nil {
+				return err
+			}
+		} else {
+			if err := exec.Command("reboot").Run(); err != nil {
+				return err
+			}
+		}
+	case "windows":
+		if delay && delaysecond > 0 {
+			if err := exec.Command("shutdown", "/r", "/t", strconv.FormatInt(delaysecond, 10)).Run(); err != nil {
+				return err
+			}
+		} else {
+			if err := exec.Command("shutdown", "/r", "/f").Run(); err != nil {
+				return err
+			}
+		}
+	default:
+		return errors.New("unsupport os type")
+	}
+	return nil
+}
+func shutdownos(delay bool, delaysecond int64) error {
+	switch runtime.GOOS {
+	case "linux":
+		if delay && delaysecond > 0 {
+			if err := exec.Command("shutdown", "-h", `+`, strconv.FormatInt(delaysecond/60, 10)).Run(); err != nil {
+				return err
+			}
+		} else {
+			if err := exec.Command("halt").Run(); err != nil {
+				return err
+			}
+		}
+	case "windows":
+		if delay && delaysecond > 0 {
+			if err := exec.Command("shutdown", "/s", "/t", strconv.FormatInt(delaysecond, 10)).Run(); err != nil {
+				return err
+			}
+		} else {
+			if err := exec.Command("shutdown", "/s", "/f").Run(); err != nil {
+				return err
+			}
+		}
+	default:
+		return errors.New("unsupport os type")
+	}
+	return nil
+}
+func setpasswd(username, passwd string) error {
+	switch runtime.GOOS {
+	case "linux":
+	//echo password | passwd --stdin  username
+	case "windows":
+		//net user username passwd
+		if err := exec.Command("net", "user", username, passwd).Run(); err != nil {
+			return err
+		}
+	default:
+		return errors.New("unsupport os type")
+	}
+	return nil
 }
