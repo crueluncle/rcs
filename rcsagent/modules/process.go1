@@ -1,9 +1,11 @@
 package modules
 
-//"archive/tar"
-//"archive/zip"
-//"compress/gzip"
-//"os"
+import (
+	//"archive/tar"
+	"archive/zip"
+	"compress/gzip"
+	//"os"
+)
 
 type Archive struct {
 	/*inner module 'Archive',for file or directory archive,function:

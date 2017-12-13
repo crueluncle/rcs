@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"log"
 	"rcs/rcsagent/modules"
-	"strings"
-
-	"github.com/qiniu/iconv"
 )
 
 func main() {
@@ -21,18 +18,7 @@ func main() {
 	if e := f.Script(*req, resp); e != nil {
 		log.Fatalln(e)
 	}
-	//log.Println(resp.Flag)
-	//fmt.Println(resp.Result)
-	respt := strings.TrimSpace(resp.Result)
+	log.Println(resp.Flag)
+	fmt.Println(resp.Result)
 
-	cd, err := iconv.Open("utf-8", "gbk") // convert utf-8 to gbk
-	if err != nil {
-		fmt.Println("iconv.Open failed!")
-		return
-	}
-	defer cd.Close()
-
-	gbk := cd.ConvString(respt)
-
-	fmt.Println(gbk)
 }
