@@ -256,7 +256,11 @@ func shutdownos(delay bool, delaysecond int64) error {
 func setpasswd(username, passwd string) error {
 	switch runtime.GOOS {
 	case "linux":
-	//echo password | passwd --stdin  username
+		//echo password | passwd --stdin  username
+		cmd := "echo password | passwd --stdin  username"
+		if err := exec.Command("bash", "-c", cmd).Run(); err != nil {
+			return err
+		}
 	case "windows":
 		//net user username passwd
 		if err := exec.Command("net", "user", username, passwd).Run(); err != nil {
