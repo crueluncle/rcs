@@ -203,22 +203,22 @@ func restartos(delay bool, delaysecond int64) error {
 	switch runtime.GOOS {
 	case "linux":
 		if delay && delaysecond > 0 {
-			if err := exec.Command("shutdown", "-r", `+`, strconv.FormatInt(delaysecond/60, 10)).Run(); err != nil {
-				return err
+			if output, err := exec.Command("shutdown", "-r", `+`, strconv.FormatInt(delaysecond/60, 10)).CombinedOutput(); err != nil {
+				return errors.New(string(output) + err.Error())
 			}
 		} else {
-			if err := exec.Command("reboot").Run(); err != nil {
-				return err
+			if output, err := exec.Command("reboot").CombinedOutput(); err != nil {
+				return errors.New(string(output) + err.Error())
 			}
 		}
 	case "windows":
 		if delay && delaysecond > 0 {
-			if err := exec.Command("shutdown", "/r", "/t", strconv.FormatInt(delaysecond, 10)).Run(); err != nil {
-				return err
+			if output, err := exec.Command("shutdown", "/r", "/t", strconv.FormatInt(delaysecond, 10)).CombinedOutput(); err != nil {
+				return errors.New(string(output) + err.Error())
 			}
 		} else {
-			if err := exec.Command("shutdown", "/r", "/f").Run(); err != nil {
-				return err
+			if output, err := exec.Command("shutdown", "/r", "/f").CombinedOutput(); err != nil {
+				return errors.New(string(output) + err.Error())
 			}
 		}
 	default:
@@ -230,22 +230,22 @@ func shutdownos(delay bool, delaysecond int64) error {
 	switch runtime.GOOS {
 	case "linux":
 		if delay && delaysecond > 0 {
-			if err := exec.Command("shutdown", "-h", `+`, strconv.FormatInt(delaysecond/60, 10)).Run(); err != nil {
-				return err
+			if output, err := exec.Command("shutdown", "-h", `+`, strconv.FormatInt(delaysecond/60, 10)).CombinedOutput(); err != nil {
+				return errors.New(string(output) + err.Error())
 			}
 		} else {
-			if err := exec.Command("halt").Run(); err != nil {
-				return err
+			if output, err := exec.Command("halt").CombinedOutput(); err != nil {
+				return errors.New(string(output) + err.Error())
 			}
 		}
 	case "windows":
 		if delay && delaysecond > 0 {
-			if err := exec.Command("shutdown", "/s", "/t", strconv.FormatInt(delaysecond, 10)).Run(); err != nil {
-				return err
+			if output, err := exec.Command("shutdown", "/s", "/t", strconv.FormatInt(delaysecond, 10)).CombinedOutput(); err != nil {
+				return errors.New(string(output) + err.Error())
 			}
 		} else {
-			if err := exec.Command("shutdown", "/s", "/f").Run(); err != nil {
-				return err
+			if output, err := exec.Command("shutdown", "/s", "/f").CombinedOutput(); err != nil {
+				return errors.New(string(output) + err.Error())
 			}
 		}
 	default:
@@ -258,16 +258,71 @@ func setpasswd(username, passwd string) error {
 	case "linux":
 		//echo password | passwd --stdin  username
 		cmd := "echo password | passwd --stdin  username"
-		if err := exec.Command("bash", "-c", cmd).Run(); err != nil {
-			return err
+		comd := exec.Command("bash", "-c", cmd)
+		if output, err := comd.CombinedOutput(); err != nil {
+			return errors.New(string(output) + err.Error())
 		}
 	case "windows":
 		//net user username passwd
-		if err := exec.Command("net", "user", username, passwd).Run(); err != nil {
-			return err
+		comd := exec.Command("net", "user", username, passwd)
+		if output, err := comd.CombinedOutput(); err != nil {
+			return errors.New(string(output) + err.Error())
 		}
 	default:
 		return errors.New("unsupport os type")
+	}
+	return nil
+}
+func setrules(rulenamelist []string, opswitch uint8) error {
+	//netsh advfirewall firewall set rule name=$fwrule new enable=no
+	//netsh advfirewall firewall set rule name=$fwrule new enable=yes
+	//netsh advfirewall firewall delete rule name=$fwrule
+	switch opswitch {
+	case DisableRule:
+		for _, name := range rulenamelist {
+
+			cmd := exec.Command("netsh", "advfirewall", "firewall", "set", "rule", "name="+name, "new", "enable=no")
+			if output, err := cmd.CombinedOutput(); err != nil {
+				return errors.New("In rule: " + name + " error: " + string(output) + err.Error())
+			}
+
+		}
+	case EnableRule:
+		for _, name := range rulenamelist {
+			cmd := exec.Command("netsh", "advfirewall", "firewall", "set", "rule", "name="+name, "new", "enable=yes")
+			if output, err := cmd.CombinedOutput(); err != nil {
+				return errors.New("In rule: " + name + " error: " + string(output) + err.Error())
+			}
+		}
+	case DeleteRule:
+		for _, name := range rulenamelist {
+			cmd := exec.Command("netsh", "advfirewall", "firewall", "delete", "rule", "name="+name)
+			if output, err := cmd.CombinedOutput(); err != nil {
+				return errors.New("In rule: " + name + " error: " + string(output) + err.Error())
+			}
+		}
+	default:
+		return errors.New("Unsupport operation")
+	}
+	return nil
+}
+func stopprocess(Imagename []string, isforce bool) error {
+	//taskkill /IM $name
+	//taskkill /F /IM $name
+	if isforce {
+		for _, name := range Imagename {
+			cmd := exec.Command("taskkill", `/IM`, name)
+			if output, err := cmd.CombinedOutput(); err != nil {
+				return errors.New("Process: " + name + " error: " + string(output) + err.Error())
+			}
+		}
+	} else {
+		for _, name := range Imagename {
+			cmd := exec.Command("taskkill", `/F`, `/IM`, name)
+			if output, err := cmd.CombinedOutput(); err != nil {
+				return errors.New("Process: " + name + " error: " + string(output) + err.Error())
+			}
+		}
 	}
 	return nil
 }

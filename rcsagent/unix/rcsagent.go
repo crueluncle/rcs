@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"rcs/rcsagent"
+	"rcs/rcsagent/modules"
 	"rcs/utils"
 	"runtime/debug"
 	"syscall"
@@ -29,6 +29,12 @@ func init() {
 	gob.Register(&rcsagent.Rcs_HeartBeat_Req{})*/
 	file, _ := exec.LookPath(os.Args[0])
 	path := filepath.Dir(file)
+	if err := os.MkdirAll(filepath.Join(path, `log`), 0666); err != nil {
+		log.Fatalln(err)
+	}
+	if err := os.MkdirAll(filepath.Join(path, `cfg`), 0666); err != nil {
+		log.Fatalln(err)
+	}
 	logfilename := filepath.Join(path, `log/rcsagent.log`)
 	logf, _ = os.OpenFile(logfilename, syscall.O_CREAT|syscall.O_RDWR|syscall.O_APPEND, 0777)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
@@ -56,7 +62,7 @@ func main() {
 
 	var e error
 	var tc *utils.TClient
-	var agentServe utils.TFunc = rcsagent.InitRPCserver
+	var agentServe utils.TFunc = modules.InitRPCserver_unix
 
 	if e, tc = utils.NewTClient(jobsvrAddr, rconT, 0, true, agentServe); tc != nil {
 		log.Fatalln(tc.Connect())
