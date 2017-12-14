@@ -12,10 +12,6 @@ type Firewall struct {
 	Setrules()
 	*/
 }
-type Firewall_setrules_req struct {
-	Rulename []string
-	Op       uint8 //at present,just support the code defined in 'const'
-}
 
 func (fw Firewall) Setrules(seb Firewall_setrules_req, res *Atomicresponse) error {
 	//Sets new values for properties of a existing rule. ust support windows platform

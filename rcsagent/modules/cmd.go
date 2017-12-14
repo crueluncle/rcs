@@ -13,11 +13,6 @@ type Cmd struct {
 	//inner execution module 'Cmd' for execute scripts on os
 	//just one funtion:Script() for execute scripts from remote
 }
-type Cmd_script_req struct {
-	FileUrl    string
-	FileMd5    string
-	ScriptArgs []string
-}
 
 func (f Cmd) Script(seb Cmd_script_req, res *Atomicresponse) error {
 	/*

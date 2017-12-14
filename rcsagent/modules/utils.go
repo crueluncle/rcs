@@ -36,10 +36,6 @@ type RpcCallResponse struct { //表示一个原子请求的响应
 	Flag   bool
 	Result string
 }
-type Atomicresponse struct { //表示一个原子请求的响应
-	Flag   bool
-	Result string
-}
 
 //以下定义6种原子请求类,原子操作基本固定
 type Script_Run_Req struct {

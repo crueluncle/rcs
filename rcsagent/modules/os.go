@@ -7,18 +7,6 @@ type Os struct { //Os模块,支持os相关操作,方法:Restart,Shutdown,Setpwd
 	Setpwd()
 	*/
 }
-type Os_restart_req struct {
-	delay       bool
-	delaysecond int64
-}
-type Os_shutdown_req struct {
-	delay       bool
-	delaysecond int64
-}
-type Os_setpwd_req struct {
-	username string
-	passwd   string
-}
 
 func (f Os) Restart(seb Os_restart_req, res *Atomicresponse) error {
 	if err := restartos(seb.delay, seb.delaysecond); err != nil {

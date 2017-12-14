@@ -26,44 +26,6 @@ type File struct {
 	Ckmd5sum()
 	*/
 }
-type File_push_req struct { //only support single file
-	Sfileurl, Sfilemd5 string
-	DstPath            string
-}
-type File_pull_req struct { //only support single file
-	Sfilepath string
-	Dstdir    string
-}
-type File_cp_req struct {
-	Sfilepath string //recursive if it`s a directory,
-	Dfilepath string //if exists,overwrite
-	Wodir     bool   //only used when Sfilepath is a directory,false:copy the whole directory and it`s bellows,true:only copy the directory`s bellows
-}
-type File_del_req struct {
-	Sfilepath string //recursive if it`s a directory
-	Wobak     bool   //without backup,false:with backup,true:without backup
-}
-type File_grep_req struct {
-	Sfilepath  string
-	Patternstr string //regular expression
-}
-type File_replace_req struct {
-	Sfilepath  string //must be single file,replace the whole file
-	Patternstr string //regular expression
-	Repltext   string
-}
-type File_mreplace_req struct {
-	Sfiledir           string //specify directory
-	Filenamepatternstr string //specify the filename regular expression in the 'Sfiledir' field
-	Patternstr         string //regular expression
-	Repltext           string
-}
-type File_md5sum_req struct {
-	Sfilepath string //if directory,compute the md5sum of all the files in the directory
-}
-type File_ckmd5sum_req struct { //similar to md5sum -c md5file
-	Md5filepath string
-}
 
 func (f File) Push(seb File_push_req, res *Atomicresponse) error {
 	//download file from remote,and check the md5sum

@@ -16,16 +16,15 @@ import (
 )
 
 const (
-	Version   = "4.0"
-	BuildTime = "2017-9-12"
+	Version   = "5.0"
+	BuildTime = "2017-12-1"
 	Author    = "careyzhang"
 )
 
-type RcsTaskReq struct { //仅用于解析api接收到的task串
-	Runid     string          //执行态id,全局唯一,master负责生存用以标识本次调用,回传给调用者用于异步获取结果
-	Targets   []string        //ip集合
-	Tp        uint8           //原子操作类型
-	AtomicReq json.RawMessage //各原子请求结构json串
+type RcsTaskReq struct { //
+	Runid   string   //执行态id,全局唯一,master负责生存用以标识本次调用,回传给调用者用于异步获取结果
+	Targets []string //ip集合
+	modules.Atomicrequest
 }
 type RcsTaskResp struct { /*jobsvr返回给master的响应结构,存储到redis中hash表中
 	对于每一个执行态runid,生存2个hash表：runid:true存放flag为true的RcsResponse对象：hset 1000:true 1.1.1.1 result(为resutl字段的json串)
@@ -37,31 +36,6 @@ type RcsTaskResp struct { /*jobsvr返回给master的响应结构,存储到redis�
 	AgentIP string
 	modules.Atomicresponse
 }
-
-/*
-func (task *RcsTaskReq) Parse() interface{} {
-	var atomicReq interface{}
-	switch task.Tp {
-	case rcsagent.ScriptExec:
-		atomicReq = new(rcsagent.Script_Run_Req)
-	case rcsagent.FilePush:
-		atomicReq = new(rcsagent.File_Push_Req)
-	case rcsagent.RcsAgentRestart:
-		atomicReq = new(rcsagent.Rcs_Restart_Req)
-	case rcsagent.RcsAgentStop:
-		atomicReq = new(rcsagent.Rcs_Stop_Req)
-	case rcsagent.RcsAgentUpgrade:
-		atomicReq = new(rcsagent.Rcs_Upgrade_Req)
-	case rcsagent.RcsAgentHeartBeat:
-		atomicReq = new(rcsagent.Rcs_HeartBeat_Req)
-	default:
-		return nil
-	}
-	if err := json.Unmarshal(task.AtomicReq, atomicReq); err != nil {
-		return nil
-	}
-	return atomicReq
-}*/
 
 type MasterApiResp struct { //masterapi返回给api调用者的消息
 	ErrStatus string
