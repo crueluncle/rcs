@@ -5,7 +5,7 @@ package main
 //直接双击则跑在前端
 //日志仅写到文件中
 import (
-	"encoding/gob"
+	//	"encoding/gob"
 	"fmt"
 	"log"
 	"os"
@@ -47,20 +47,21 @@ func (p *program) run() {
 
 	var e error
 	var tc *utils.TClient
-	var agentServer utils.TFunc = rcsagent.StartRPCserver
+	var agentServe utils.TFunc = rcsagent.InitRPCserver
 
-	if e, tc = utils.NewTClient(jobsvrAddr, rconT, 0, true, agentServer); tc != nil {
+	if e, tc = utils.NewTClient(jobsvrAddr, rconT, 0, true, agentServe); tc != nil {
 		log.Fatalln(tc.Connect())
 	}
 	log.Fatalln(e)
 }
 func init() {
-	gob.Register(&rcsagent.Script_Run_Req{})
-	gob.Register(&rcsagent.File_Push_Req{})
-	gob.Register(&rcsagent.Rcs_Restart_Req{})
-	gob.Register(&rcsagent.Rcs_Stop_Req{})
-	gob.Register(&rcsagent.Rcs_Upgrade_Req{})
-	gob.Register(&rcsagent.Rcs_HeartBeat_Req{})
+	/*	gob.Register(&rcsagent.Script_Run_Req{})
+		gob.Register(&rcsagent.File_Push_Req{})
+		gob.Register(&rcsagent.Rcs_Restart_Req{})
+		gob.Register(&rcsagent.Rcs_Stop_Req{})
+		gob.Register(&rcsagent.Rcs_Upgrade_Req{})
+		gob.Register(&rcsagent.Rcs_HeartBeat_Req{})
+	*/
 	file, _ := exec.LookPath(os.Args[0])
 	//path, _ := os.Getwd()
 	path := filepath.Dir(file)

@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"rcs/rcsagent"
+	"rcs/rcsagent/modules"
 	"time"
 
 	"github.com/Unknwon/goconfig"
@@ -21,16 +21,11 @@ const (
 	Author    = "careyzhang"
 )
 
-type RcsTaskReqJson struct { //仅用于解析api接收到的task串
+type RcsTaskReq struct { //仅用于解析api接收到的task串
 	Runid     string          //执行态id,全局唯一,master负责生存用以标识本次调用,回传给调用者用于异步获取结果
 	Targets   []string        //ip集合
 	Tp        uint8           //原子操作类型
-	AtomicReq json.RawMessage //原子请求json串
-}
-type RcsTaskReq struct {
-	Runid     string                  //执行态id,全局唯一,master负责生存用以标识本次调用,回传给调用者用于异步获取结果
-	Targets   []string                //ip集合
-	AtomicReq rcsagent.RpcCallRequest //原子请求
+	AtomicReq json.RawMessage //各原子请求结构json串
 }
 type RcsTaskResp struct { /*jobsvr返回给master的响应结构,存储到redis中hash表中
 	对于每一个执行态runid,生存2个hash表：runid:true存放flag为true的RcsResponse对象：hset 1000:true 1.1.1.1 result(为resutl字段的json串)
@@ -40,12 +35,12 @@ type RcsTaskResp struct { /*jobsvr返回给master的响应结构,存储到redis�
 	*/
 	Runid   string //执行态id,全局唯一
 	AgentIP string
-	rcsagent.RpcCallResponse
+	modules.Atomicresponse
 }
 
-func (task *RcsTaskReqJson) Parse() *RcsTaskReq {
-	var atomicReq rcsagent.RpcCallRequest
-	var taskreq = new(RcsTaskReq)
+/*
+func (task *RcsTaskReq) Parse() interface{} {
+	var atomicReq interface{}
 	switch task.Tp {
 	case rcsagent.ScriptExec:
 		atomicReq = new(rcsagent.Script_Run_Req)
@@ -65,11 +60,8 @@ func (task *RcsTaskReqJson) Parse() *RcsTaskReq {
 	if err := json.Unmarshal(task.AtomicReq, atomicReq); err != nil {
 		return nil
 	}
-	taskreq.Runid = task.Runid
-	taskreq.Targets = task.Targets
-	taskreq.AtomicReq = atomicReq
-	return taskreq
-}
+	return atomicReq
+}*/
 
 type MasterApiResp struct { //masterapi返回给api调用者的消息
 	ErrStatus string
@@ -130,7 +122,7 @@ func Listfiles(dir string) []string {
 }
 
 func HandleConfigFile(configfilename, defaultconfig string) *goconfig.ConfigFile {
-	if !rcsagent.Isexist(configfilename) {
+	if ex, _, _ := modules.Isexistdir(configfilename); !ex {
 		log.Println("No cfg file exist,create it...")
 		cfgfile, err := os.OpenFile(configfilename, os.O_CREATE|os.O_RDWR, 0777)
 		if err != nil {

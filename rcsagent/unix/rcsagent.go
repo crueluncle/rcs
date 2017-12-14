@@ -6,13 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime/debug"
-	//	"strings"
 	"rcs/rcsagent"
 	"rcs/utils"
+	"runtime/debug"
 	"syscall"
-
-	"encoding/gob"
 
 	//"github.com/Unknwon/goconfig"
 )
@@ -20,19 +17,17 @@ import (
 var (
 	rconT      int    //agent断开jobsvr连接后，在多长的随机时间内重连jobsvr,agent数量可能较多，随机重连避免风暴
 	jobsvrAddr string // jobsvr地址
-	//tmpfiledir string //脚本文件临时位置
 )
 var logf *os.File //将start/stop/run中逻辑代码的日志记录到文件
 
 func init() {
-	gob.Register(&rcsagent.Script_Run_Req{})
+	/*gob.Register(&rcsagent.Script_Run_Req{})
 	gob.Register(&rcsagent.File_Push_Req{})
 	gob.Register(&rcsagent.Rcs_Restart_Req{})
 	gob.Register(&rcsagent.Rcs_Stop_Req{})
 	gob.Register(&rcsagent.Rcs_Upgrade_Req{})
-	gob.Register(&rcsagent.Rcs_HeartBeat_Req{})
+	gob.Register(&rcsagent.Rcs_HeartBeat_Req{})*/
 	file, _ := exec.LookPath(os.Args[0])
-
 	path := filepath.Dir(file)
 	logfilename := filepath.Join(path, `log/rcsagent.log`)
 	logf, _ = os.OpenFile(logfilename, syscall.O_CREAT|syscall.O_RDWR|syscall.O_APPEND, 0777)
@@ -61,9 +56,9 @@ func main() {
 
 	var e error
 	var tc *utils.TClient
-	var agentServer utils.TFunc = rcsagent.StartRPCserver
+	var agentServe utils.TFunc = rcsagent.InitRPCserver
 
-	if e, tc = utils.NewTClient(jobsvrAddr, rconT, 0, true, agentServer); tc != nil {
+	if e, tc = utils.NewTClient(jobsvrAddr, rconT, 0, true, agentServe); tc != nil {
 		log.Fatalln(tc.Connect())
 	}
 	log.Fatalln(e)

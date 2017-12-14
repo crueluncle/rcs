@@ -1,179 +1,36 @@
 package rcsagent
 
 import (
-	"bytes"
 	"errors"
-	"log"
 	"net"
 	"net/rpc"
-	"net/url"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	//	"time"
+	"rcs/rcsagent/modules"
 )
 
-var tmpfiledir string = "scriptstmpfiledir"
-
-//6类原子请求实现Rpccallrequest接口
-func (seb *Script_Run_Req) Handle(res *RpcCallResponse) error {
-	log.Println("handle 1 request:RpcCallRequest ", seb)
-	//start := time.Now()
-	if err := Downloadfilefromurl(seb.FileUrl, seb.FileMd5, tmpfiledir); err != nil {
-		log.Println("downloadfilefromregistry:", err)
-		return err
-	}
-	//log.Println("time spend1:", time.Since(start).Nanoseconds()/1000000)
-	u, e := url.Parse(seb.FileUrl)
-	if e != nil {
-		log.Println(e)
-		return e
-	}
-	uri := u.RequestURI()
-	scriptfilepath := filepath.Join(tmpfiledir, filepath.Base(strings.Split(uri, `?`)[0]))
-	command := exec.Command(scriptfilepath, seb.ScriptArgs...)
-	var outstd, errstd bytes.Buffer
-	var resStderr string
-	command.Stderr = &errstd //定义外部脚本的标准错误输出
-	command.Stdout = &outstd //定义外网脚本的标准输出
-	//	log.Println("command:", command)
-	err := command.Run() //此函数返回的err只能标识脚本中最后一条可执行语句是否执行成功，并不代表整个脚本中间无报错,判断无意义;要根据标准错误中的内容来判断
-	if err != nil {      //调用内部异常，则将外部脚本执行结果置为错误
-		resStderr = err.Error() + errstd.String()
-		log.Println("resStderr:", resStderr)
-	} else {
-		resStderr = errstd.String()
-	}
-	if resStderr == "" { //真正判断是否执行成功，无论是调用内部异常还是外部脚本有异常均可返回给调用方
-		res.Flag = true
-		res.Result = outstd.String()
-	} else {
-		res.Flag = false
-		res.Result = resStderr
-	}
-	//log.Println("time spend:", time.Since(start).Nanoseconds()/1000000)
-	return nil
-}
-func (seb *File_Push_Req) Handle(res *RpcCallResponse) error {
-	log.Println("handle 1 request:RpcCallRequest ", seb)
-	if err := Downloadfilefromurl(seb.FileUrl, seb.FileMd5, seb.DstPath); err != nil {
-		log.Println("downloadfilefromjobsvr:", err)
-		res.Flag = false
-		res.Result = err.Error()
-		return err
-	}
-	res.Flag = true
-	res.Result = seb.FileMd5
-	return nil
-}
-
-func (seb *Rcs_Restart_Req) Handle(res *RpcCallResponse) error {
-
-	return nil
-}
-func (seb *Rcs_Stop_Req) Handle(res *RpcCallResponse) error {
-
-	return nil
-}
-func (seb *Rcs_Upgrade_Req) Handle(res *RpcCallResponse) error {
-
-	return nil
-}
-func (seb *Rcs_HeartBeat_Req) Handle(res *RpcCallResponse) error {
-	res.Flag = true
-	res.Result = seb.Msg
-	return nil
-}
-func (seb *Script_Run_Req) GetFileUrl() string {
-	return seb.FileUrl
-}
-func (seb *File_Push_Req) GetFileUrl() string {
-	return seb.FileUrl
-}
-func (seb *Rcs_Restart_Req) GetFileUrl() string {
-	return ""
-}
-func (seb *Rcs_Stop_Req) GetFileUrl() string {
-	return ""
-}
-func (seb *Rcs_Upgrade_Req) GetFileUrl() string {
-	return ""
-}
-func (seb *Rcs_HeartBeat_Req) GetFileUrl() string {
-	return ""
-}
-func (seb *Script_Run_Req) GetFileMd5() string {
-	return seb.FileMd5
-}
-func (seb *File_Push_Req) GetFileMd5() string {
-	return seb.FileMd5
-}
-func (seb *Rcs_Restart_Req) GetFileMd5() string {
-	return ""
-}
-func (seb *Rcs_Stop_Req) GetFileMd5() string {
-	return ""
-}
-func (seb *Rcs_Upgrade_Req) GetFileMd5() string {
-	return ""
-}
-func (seb *Rcs_HeartBeat_Req) GetFileMd5() string {
-	return ""
-}
-func (seb *Script_Run_Req) SetFileUrl(newurl string) {
-	seb.FileUrl = newurl
-}
-func (seb *File_Push_Req) SetFileUrl(newurl string) {
-	seb.FileUrl = newurl
-}
-func (seb *Rcs_Restart_Req) SetFileUrl(newurl string) {
-
-}
-func (seb *Rcs_Stop_Req) SetFileUrl(newurl string) {
-
-}
-func (seb *Rcs_Upgrade_Req) SetFileUrl(newurl string) {
-
-}
-func (seb *Rcs_HeartBeat_Req) SetFileUrl(newurl string) {
-
-}
-
-//定义对外的rpc服务名及方法：外界只需调用ModuleService.Run即自动执行相应原子请求各自的执行方法(多态)
-type ModuleService struct {
-}
-
-func (s ModuleService) Run(seb RpcCallRequest, res *RpcCallResponse) error {
-	return seb.Handle(res)
-}
-
-func StartRPCserver(conn *net.TCPConn) error {
+func InitRPCserver(conn *net.TCPConn) error {
+	//register services defined in 'modules'
 	defer conn.Close()
-	//log.Println("tmpfiledir:", tmpfiledir)
 	RpcServer := rpc.NewServer()
-	err := RpcServer.Register(ModuleService{})
+	err := RpcServer.Register(modules.File{})
+	if err != nil {
+		return err
+	}
+	err = RpcServer.Register(modules.Cmd{})
+	if err != nil {
+		return err
+	}
+	err = RpcServer.Register(modules.Os{})
+	if err != nil {
+		return err
+	}
+	err = RpcServer.Register(modules.Rcs{})
+	if err != nil {
+		return err
+	}
+	err = RpcServer.Register(modules.Archive{})
 	if err != nil {
 		return err
 	}
 	RpcServer.ServeConn(conn)
-	return errors.New("RpcServer exit")
-}
-func init() {
-	e := settmpdir()
-	if e != nil {
-		log.Fatalln(e)
-	}
-}
-func settmpdir() error {
-	file, e := exec.LookPath(os.Args[0])
-	if e != nil {
-		return e
-	}
-	path, e := filepath.Abs(file)
-	if e != nil {
-		return e
-	}
-	tmpfiledir = filepath.Join(filepath.Dir(path), tmpfiledir)
-	return nil
+	return errors.New("RpcServer exit.")
 }
