@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -15,7 +16,14 @@ import (
 
 func (seb File_push_req) Handle(res *Atomicresponse) error {
 	//download file from remote,and check the md5sum
-	if err := Downloadfilefromurl(seb.Sfileurl, seb.Sfilemd5, seb.DstPath); err != nil {
+	u, err := url.Parse(seb.Sfileurl)
+	if err != nil {
+		res.Flag = false
+		res.Result = err.Error()
+		return err
+	}
+	u.Host = FilecacheAddr
+	if err := Downloadfilefromurl(u.String(), seb.Sfilemd5, seb.DstPath); err != nil {
 		res.Flag = false
 		res.Result = err.Error()
 		return err

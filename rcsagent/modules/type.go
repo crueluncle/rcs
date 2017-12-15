@@ -1,6 +1,11 @@
 package modules
 
 //	"encoding/json"
+var (
+	RconT         int    //agent断开jobsvr连接后，在多长的随机时间内重连jobsvr,agent数量可能较多，随机重连避免风暴
+	JobsvrAddr    string // jobsvr地址
+	FilecacheAddr string //filecacheSvr地址
+)
 
 //define all atomic request structs in here
 type File_push_req struct { //only support single file  'file.push'

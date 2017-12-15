@@ -42,7 +42,6 @@ func (th *taskHandler) Run() {
 	for v := range th.tasks {
 		if task, ok := v.(*utils.RcsTaskReq); ok {
 			log.Println("Got a task request:", task.Runid)
-			//首先下载文件,对于每个task只需下载一次
 			for _, ip := range task.Targets {
 				go th.handlerequest(task.Runid, ip, task.Atomicrequest) //对于一个任务中的多个agent进行并发处理；task.AtomicReq是一个interface(引用变量),非并发安全
 			}

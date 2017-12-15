@@ -18,13 +18,14 @@ func (seb Cmd_script_req) Handle(res *Atomicresponse) error {
 		3.the response content may has chinese charset of gbk,the caller should be translate it to uft-8 before print it,like use 'github.com/qiniu/iconv' module
 	*/
 	tmpfiledir := os.TempDir()
-	if err := Downloadfilefromurl(seb.FileUrl, seb.FileMd5, tmpfiledir); err != nil {
+	u, err := url.Parse(seb.FileUrl)
+	if err != nil {
 		res.Flag = false
 		res.Result = err.Error()
 		return err
 	}
-	u, err := url.Parse(seb.FileUrl)
-	if err != nil {
+	u.Host = FilecacheAddr
+	if err := Downloadfilefromurl(u.String(), seb.FileMd5, tmpfiledir); err != nil {
 		res.Flag = false
 		res.Result = err.Error()
 		return err
