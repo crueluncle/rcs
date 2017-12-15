@@ -7,7 +7,7 @@ type Process struct {
 	 */
 }
 
-func (p Process) Stop(seb Process_stop_req, res *Atomicresponse) error {
+func (seb Process_stop_req) Handle(res *Atomicresponse) error {
 	if err := stopprocess(seb.Imagename, seb.Doforce); err != nil {
 		res.Flag = false
 		res.Result = err.Error()

@@ -2,6 +2,7 @@ package main
 
 //日志写到文件中
 import (
+	"encoding/gob"
 	"log"
 	"os"
 	"os/exec"
@@ -10,7 +11,6 @@ import (
 	"rcs/utils"
 	"runtime/debug"
 	"syscall"
-
 	//"github.com/Unknwon/goconfig"
 )
 
@@ -21,12 +21,22 @@ var (
 var logf *os.File //将start/stop/run中逻辑代码的日志记录到文件
 
 func init() {
-	/*gob.Register(&rcsagent.Script_Run_Req{})
-	gob.Register(&rcsagent.File_Push_Req{})
-	gob.Register(&rcsagent.Rcs_Restart_Req{})
-	gob.Register(&rcsagent.Rcs_Stop_Req{})
-	gob.Register(&rcsagent.Rcs_Upgrade_Req{})
-	gob.Register(&rcsagent.Rcs_HeartBeat_Req{})*/
+	gob.Register(&modules.File_push_req{})
+	gob.Register(&modules.File_pull_req{})
+	gob.Register(&modules.File_cp_req{})
+	gob.Register(&modules.File_del_req{})
+	gob.Register(&modules.File_grep_req{})
+	gob.Register(&modules.File_replace_req{})
+	gob.Register(&modules.File_mreplace_req{})
+	gob.Register(&modules.File_md5sum_req{})
+	gob.Register(&modules.File_ckmd5sum_req{})
+	gob.Register(&modules.Cmd_script_req{})
+	gob.Register(&modules.Os_restart_req{})
+	gob.Register(&modules.Os_shutdown_req{})
+	gob.Register(&modules.Os_setpwd_req{})
+	gob.Register(&modules.Firewall_set_req{})
+	gob.Register(&modules.Process_stop_req{})
+	gob.Register(&modules.Rcs_ping_Req{})
 	file, _ := exec.LookPath(os.Args[0])
 	path := filepath.Dir(file)
 	if err := os.MkdirAll(filepath.Join(path, `log`), 0666); err != nil {
@@ -62,7 +72,7 @@ func main() {
 
 	var e error
 	var tc *utils.TClient
-	var agentServe utils.TFunc = modules.InitRPCserver_unix
+	var agentServe utils.TFunc = modules.InitRPCserver
 
 	if e, tc = utils.NewTClient(jobsvrAddr, rconT, 0, true, agentServe); tc != nil {
 		log.Fatalln(tc.Connect())

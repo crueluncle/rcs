@@ -12,7 +12,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"rcs/rcsagent"
 	"rcs/rcsmaster/modules"
 	"rcs/utils"
 	"runtime"
@@ -36,12 +35,6 @@ var redisClient *redis.Pool
 var taskList chan *utils.RcsTaskReq
 
 func init() {
-	gob.Register(&rcsagent.Script_Run_Req{})
-	gob.Register(&rcsagent.File_Push_Req{})
-	gob.Register(&rcsagent.Rcs_Restart_Req{})
-	gob.Register(&rcsagent.Rcs_Stop_Req{})
-	gob.Register(&rcsagent.Rcs_Upgrade_Req{})
-	gob.Register(&rcsagent.Rcs_HeartBeat_Req{})
 	gob.Register(utils.KeepaliveMsg{})
 	gob.Register(utils.RcsTaskResp{})
 	gob.Register(utils.RcsTaskReq{})

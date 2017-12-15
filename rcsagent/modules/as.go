@@ -6,73 +6,21 @@ import (
 	"net/rpc"
 )
 
-func InitRPCserver_win(conn *net.TCPConn) error {
-	//register services defined in 'modules' for windows platform agent
-	defer conn.Close()
-	RpcServer := rpc.NewServer()
-	err := RpcServer.Register(File{})
-	if err != nil {
-		return err
-	}
-	err = RpcServer.Register(Cmd{})
-	if err != nil {
-		return err
-	}
-	err = RpcServer.Register(Os{})
-	if err != nil {
-		return err
-	}
-	err = RpcServer.Register(Firewall{})
-	if err != nil {
-		return err
-	}
-	err = RpcServer.Register(Process{})
-	if err != nil {
-		return err
-	}
-	/*
-		err = RpcServer.Register(Rcs{})
-		if err != nil {
-			return err
-		}
-		err = RpcServer.Register(Archive{})
-		if err != nil {
-			return err
-		}
-
-
-	*/
-	RpcServer.ServeConn(conn)
-	return errors.New("RpcServer exit.")
+type Service struct {
+	//rcp service for out
 }
 
-func InitRPCserver_unix(conn *net.TCPConn) error {
-	//register services defined in 'modules' for unix platform agent
+func (s Service) Call(req Atomicrequest, res *Atomicresponse) error {
+	return req.Handle(res)
+}
+func InitRPCserver(conn *net.TCPConn) error {
+	//register services
 	defer conn.Close()
 	RpcServer := rpc.NewServer()
-	err := RpcServer.Register(File{})
+	err := RpcServer.Register(Service{})
 	if err != nil {
 		return err
 	}
-	err = RpcServer.Register(Cmd{})
-	if err != nil {
-		return err
-	}
-	err = RpcServer.Register(Os{})
-	if err != nil {
-		return err
-	}
-	/*
-		err = RpcServer.Register(Rcs{})
-		if err != nil {
-			return err
-		}
-		err = RpcServer.Register(Archive{})
-		if err != nil {
-			return err
-		}
-
-	*/
 	RpcServer.ServeConn(conn)
 	return errors.New("RpcServer exit.")
 }

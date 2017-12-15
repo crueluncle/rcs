@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -21,6 +22,12 @@ const (
 	Author    = "careyzhang"
 )
 
+type RcsTaskReqJson struct { //仅用于解析api接收到的task串
+	Runid     string          //执行态id,全局唯一,master负责生存用以标识本次调用,回传给调用者用于异步获取结果
+	Targets   []string        //ip集合
+	Tp        string          //原子操作类型
+	AtomicReq json.RawMessage //原子请求json串
+}
 type RcsTaskReq struct { //
 	Runid   string   //执行态id,全局唯一,master负责生存用以标识本次调用,回传给调用者用于异步获取结果
 	Targets []string //ip集合
@@ -35,6 +42,54 @@ type RcsTaskResp struct { /*jobsvr返回给master的响应结构,存储到redis�
 	Runid   string //执行态id,全局唯一
 	AgentIP string
 	modules.Atomicresponse
+}
+
+func (task *RcsTaskReqJson) Parse() (*RcsTaskReq, error) {
+	var atomicReq modules.Atomicrequest
+	var taskreq = new(RcsTaskReq)
+	switch task.Tp {
+	case "file.push":
+		atomicReq = new(modules.File_push_req)
+	case "file.pull":
+		atomicReq = new(modules.File_pull_req)
+	case "file.cp":
+		atomicReq = new(modules.File_cp_req)
+	case "file.del":
+		atomicReq = new(modules.File_del_req)
+	case "file.grep":
+		atomicReq = new(modules.File_grep_req)
+	case "file.replace":
+		atomicReq = new(modules.File_replace_req)
+	case "file.mreplace":
+		atomicReq = new(modules.File_mreplace_req)
+	case "file.md5sum":
+		atomicReq = new(modules.File_md5sum_req)
+	case "file.ckmd5sum":
+		atomicReq = new(modules.File_ckmd5sum_req)
+	case "cmd.script":
+		atomicReq = new(modules.Cmd_script_req)
+	case "os.restart":
+		atomicReq = new(modules.Os_restart_req)
+	case "os.shutdown":
+		atomicReq = new(modules.Os_shutdown_req)
+	case "os.setpwd":
+		atomicReq = new(modules.Os_setpwd_req)
+	case "firewall.set":
+		atomicReq = new(modules.Firewall_set_req)
+	case "process.stop":
+		atomicReq = new(modules.Process_stop_req)
+	case "rcs.ping":
+		atomicReq = new(modules.Rcs_ping_req)
+	default:
+		return nil, errors.New("unknow command:" + task.Tp)
+	}
+	if err := json.Unmarshal(task.AtomicReq, atomicReq); err != nil {
+		return nil, err
+	}
+	taskreq.Runid = task.Runid
+	taskreq.Targets = task.Targets
+	taskreq.Atomicrequest = atomicReq
+	return taskreq, nil
 }
 
 type MasterApiResp struct { //masterapi返回给api调用者的消息

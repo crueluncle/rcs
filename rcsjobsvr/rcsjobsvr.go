@@ -11,7 +11,7 @@ import (
 	"io"
 	"log"
 	"os"
-	"rcs/rcsagent"
+	agentmod "rcs/rcsagent/modules"
 	"rcs/rcsjobsvr/modules"
 	"rcs/utils"
 	"runtime"
@@ -39,15 +39,22 @@ var nodeRouteMap *sync.Map
 
 func init() { //初始化操作
 	utils.MsgTypeRegist(&utils.RcsTaskReq{})
-	gob.Register(&rcsagent.Script_Run_Req{})
-	gob.Register(&rcsagent.File_Push_Req{})
-	gob.Register(&rcsagent.Rcs_Restart_Req{})
-	gob.Register(&rcsagent.Rcs_Stop_Req{})
-	gob.Register(&rcsagent.Rcs_Upgrade_Req{})
-	gob.Register(&rcsagent.Rcs_HeartBeat_Req{})
-	gob.Register(rcsagent.RpcCallResponse{})
-	gob.Register(utils.KeepaliveMsg{})
-	gob.Register(utils.RcsTaskResp{})
+	gob.Register(&agentmod.File_push_req{})
+	gob.Register(&agentmod.File_pull_req{})
+	gob.Register(&agentmod.File_cp_req{})
+	gob.Register(&agentmod.File_del_req{})
+	gob.Register(&agentmod.File_grep_req{})
+	gob.Register(&agentmod.File_replace_req{})
+	gob.Register(&agentmod.File_mreplace_req{})
+	gob.Register(&agentmod.File_md5sum_req{})
+	gob.Register(&agentmod.File_ckmd5sum_req{})
+	gob.Register(&agentmod.Cmd_script_req{})
+	gob.Register(&agentmod.Os_restart_req{})
+	gob.Register(&agentmod.Os_shutdown_req{})
+	gob.Register(&agentmod.Os_setpwd_req{})
+	gob.Register(&agentmod.Firewall_set_req{})
+	gob.Register(&agentmod.Process_stop_req{})
+	gob.Register(&agentmod.Rcs_ping_req{})
 	//处理日志
 	var err error
 	logfile, err = os.OpenFile("log/rcsjobsvr.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0777)
@@ -63,13 +70,13 @@ func init() { //初始化操作
 	defcfg := `;section Base defines some params,'SectionName' in []  must be uniq globally.
 [BASE]
 routeId			   = 10000
-rpcTimeOut         = 3600                  
-agentCKT           = 10                    
-masterCKT          = 10                    
-taskLength         = 1280                    
-jobsvrAddr         = 0.0.0.0:9529      
+rpcTimeOut         = 3600
+agentCKT           = 10
+masterCKT          = 10
+taskLength         = 1280
+jobsvrAddr         = 0.0.0.0:9529
 masterAddr         = 127.0.0.1:9525
-masterSyncAddr     = 127.0.0.1:9526        
+masterSyncAddr     = 127.0.0.1:9526
 filecacheAddr      = 0.0.0.0:9530`
 
 	cf := utils.HandleConfigFile("cfg/rcsjobsvr.ini", defcfg)

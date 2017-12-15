@@ -9,12 +9,8 @@ import (
 	"strings"
 )
 
-type Cmd struct {
-	//inner execution module 'Cmd' for execute scripts on os
-	//just one funtion:Script() for execute scripts from remote
-}
-
-func (f Cmd) Script(seb Cmd_script_req, res *Atomicresponse) error {
+//impliments Atomicrequest interface
+func (seb Cmd_script_req) Handle(res *Atomicresponse) error {
 	/*
 		Script  execute scripts from remote
 		1.firstly ,download the script file

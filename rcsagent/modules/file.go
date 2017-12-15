@@ -13,21 +13,7 @@ import (
 	"time"
 )
 
-type File struct {
-	/*inner execution module 'File',implements some functions of operating file or directory,bellows:
-	Push()
-	Pull()
-	Cp()
-	Del()
-	Grep()
-	Replace()
-	Mreplace()
-	Md5sum()
-	Ckmd5sum()
-	*/
-}
-
-func (f File) Push(seb File_push_req, res *Atomicresponse) error {
+func (seb File_push_req) Handle(res *Atomicresponse) error {
 	//download file from remote,and check the md5sum
 	if err := Downloadfilefromurl(seb.Sfileurl, seb.Sfilemd5, seb.DstPath); err != nil {
 		res.Flag = false
@@ -38,11 +24,11 @@ func (f File) Push(seb File_push_req, res *Atomicresponse) error {
 	res.Result = seb.Sfilemd5
 	return nil
 }
-func (f File) Pull(seb File_pull_req, res *Atomicresponse) error {
+func (seb File_pull_req) Handle(res *Atomicresponse) error {
 	//upload file to the specified remote
 	return nil
 }
-func (f File) Cp(seb File_cp_req, res *Atomicresponse) error {
+func (seb File_cp_req) Handle(res *Atomicresponse) error {
 	/*
 		copy file or directory from source to destination , overwrite
 		1.if source is a single file,just copy to the named destination file , overwrite
@@ -90,7 +76,7 @@ func (f File) Cp(seb File_cp_req, res *Atomicresponse) error {
 	}
 	return nil
 }
-func (f File) Del(seb File_del_req, res *Atomicresponse) error {
+func (seb File_del_req) Handle(res *Atomicresponse) error {
 	/*
 		delete the specified file or directory,depends on  the 'Wobak' filed,do backup or not,
 		'backup and delete' is just call 'os.rename' function
@@ -119,7 +105,7 @@ func (f File) Del(seb File_del_req, res *Atomicresponse) error {
 	}
 	return nil
 }
-func (f File) Grep(seb File_grep_req, res *Atomicresponse) error {
+func (seb File_grep_req) Handle(res *Atomicresponse) error {
 	//like linux 'grep' command
 	fd, err := os.Open(seb.Sfilepath)
 	if err != nil {
@@ -141,7 +127,7 @@ func (f File) Grep(seb File_grep_req, res *Atomicresponse) error {
 	res.Flag = true
 	return nil
 }
-func (f File) Replace(seb File_replace_req, res *Atomicresponse) error {
+func (seb File_replace_req) Handle(res *Atomicresponse) error {
 	//replace the Patternstr of specified file to relptext,like sed -i s/Patternstr/relptext/g file
 	fi, err := os.Stat(seb.Sfilepath)
 	if err != nil {
@@ -172,7 +158,7 @@ func (f File) Replace(seb File_replace_req, res *Atomicresponse) error {
 	res.Result = seb.Sfilepath + `  ` + "Changed\n"
 	return nil
 }
-func (f File) Mreplace(seb File_mreplace_req, res *Atomicresponse) error {
+func (seb File_mreplace_req) Handle(res *Atomicresponse) error {
 	/*replace the Patternstr of the succesive match files in a directory to relptext,this means that:
 	1.find the match files in a directory
 	2.replace there files
@@ -195,7 +181,7 @@ func (f File) Mreplace(seb File_mreplace_req, res *Atomicresponse) error {
 
 	for _, file := range files {
 		req.Sfilepath = file
-		if err := f.Replace(*req, eachres); err != nil { //may partly return
+		if err := req.Handle(eachres); err != nil { //may partly return
 			return err
 		}
 		res.Result += eachres.Result
@@ -203,7 +189,7 @@ func (f File) Mreplace(seb File_mreplace_req, res *Atomicresponse) error {
 	res.Flag = true
 	return nil
 }
-func (f File) Md5sum(seb File_md5sum_req, res *Atomicresponse) error {
+func (seb File_md5sum_req) Handle(res *Atomicresponse) error {
 	//compute the md5sum of the specified file ,or all files in a directory
 	// output format : RWOSFR2FFSDFADF898DF:::/tmp/test/sdf.ini
 	ex, dr, err := Isexistdir(seb.Sfilepath)
@@ -240,7 +226,7 @@ func (f File) Md5sum(seb File_md5sum_req, res *Atomicresponse) error {
 	}
 	return nil
 }
-func (f File) Ckmd5sum(seb File_ckmd5sum_req, res *Atomicresponse) error {
+func (seb File_ckmd5sum_req) Handle(res *Atomicresponse) error {
 	//check the md5sum according to a md5file,like md5sum -c file
 	/* the md5file format :
 	RWOSFR2FFSDFADF898DF:::/tmp/test/sdf.ini

@@ -8,7 +8,7 @@ type Os struct { //Os模块,支持os相关操作,方法:Restart,Shutdown,Setpwd
 	*/
 }
 
-func (f Os) Restart(seb Os_restart_req, res *Atomicresponse) error {
+func (seb Os_restart_req) Handle(res *Atomicresponse) error {
 	if err := restartos(seb.delay, seb.delaysecond); err != nil {
 		res.Flag = false
 		res.Result = err.Error()
@@ -18,7 +18,7 @@ func (f Os) Restart(seb Os_restart_req, res *Atomicresponse) error {
 	res.Result = "success!"
 	return nil
 }
-func (f Os) Shutdown(seb Os_shutdown_req, res *Atomicresponse) error {
+func (seb Os_shutdown_req) Handle(res *Atomicresponse) error {
 	if err := shutdownos(seb.delay, seb.delaysecond); err != nil {
 		res.Flag = false
 		res.Result = err.Error()
@@ -28,7 +28,7 @@ func (f Os) Shutdown(seb Os_shutdown_req, res *Atomicresponse) error {
 	res.Result = "success!"
 	return nil
 }
-func (f Os) Setpwd(seb Os_setpwd_req, res *Atomicresponse) error {
+func (seb Os_setpwd_req) Handle(res *Atomicresponse) error {
 	if err := setpasswd(seb.username, seb.passwd); err != nil {
 		res.Flag = false
 		res.Result = err.Error()

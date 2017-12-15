@@ -65,7 +65,13 @@ func (ma *masterapi) runtask(w http.ResponseWriter, r *http.Request) {
 			rs.EncodeJson(w)
 		}
 		task.Runid = runid
-		ma.tasklist <- task.Parse()
+		taskreq, err := task.Parse()
+		if err != nil {
+			log.Println(err)
+			rs.ErrStatus = err.Error()
+			rs.EncodeJson(w)
+		}
+		ma.tasklist <- taskreq
 		rs.Uuid = runid
 		rs.EncodeJson(w)
 	} else {

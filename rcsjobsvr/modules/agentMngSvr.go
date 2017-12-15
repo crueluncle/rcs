@@ -7,7 +7,7 @@ import (
 	"net"
 	"net/rpc"
 	"os"
-	"rcs/rcsagent"
+	"rcs/rcsagent/modules"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -63,12 +63,12 @@ func (am agentMngSvr) HandleConn(conn *net.TCPConn) error {
 	ai := agentEntry{conn, rcli, new(sync.Mutex)}
 	am.addagent(ip, &ai)
 
-	resp := new(rcsagent.RpcCallResponse)
-	args := new(rcsagent.Rcs_HeartBeat_Req)
-	var argss rcsagent.RpcCallRequest = args
+	resp := new(modules.Atomicresponse)
+	args := new(modules.Rcs_ping_req)
+	var argss modules.Atomicrequest = args
 	var err error
 	for {
-		err = rcli.Call("ModuleService.Run", &argss, resp) //gob对interface类型编解码时,encode和decode需传interface的指针进去
+		err = rcli.Call("Service.Call", &argss, resp) //gob对interface类型编解码时,encode和decode需传interface的指针进去
 		if err != nil {
 			break
 		}
