@@ -1,11 +1,6 @@
 package modules
 
 // for windows platform only
-const (
-	DisableRule = iota
-	EnableRule
-	DeleteRule
-)
 
 func (seb Firewall_set_req) Handle(res *Atomicresponse) error {
 	//Sets new values for properties of a existing rule. ust support windows platform

@@ -1,25 +1,26 @@
 package main
 
 import (
-	"log"
-	"net"
-	"net/rpc"
-	"rcs/rcsagent/modules"
-	"rcs/utils"
-	"time"
+	"fmt"
+	"os"
 )
 
 type TestrpcServer struct {
 }
 
 func main() {
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
-	var trs TestrpcServer
+	//log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
+	/*var trs TestrpcServer
 	if _, ams := utils.NewTServer("0.0.0.0:9529", trs); ams != nil {
 		log.Fatalln(ams.Serve())
+	}*/
+	for index, arg := range os.Args {
+		fmt.Printf("index:%d, arg:%s\n", index, arg)
 	}
 
 }
+
+/*
 func (am TestrpcServer) HandleConn(conn *net.TCPConn) error {
 	rcli := rpc.NewClient(conn)
 	resp := new(modules.Atomicresponse)
@@ -38,4 +39,4 @@ func (am TestrpcServer) HandleConn(conn *net.TCPConn) error {
 		time.Sleep(time.Minute)
 	}
 	return nil
-}
+}*/

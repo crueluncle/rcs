@@ -53,22 +53,22 @@ type Cmd_script_req struct { //cmd.script
 //==============================================
 
 type Os_restart_req struct { //os.restart
-	delay       bool
-	delaysecond int64
+	Delay       bool
+	Delaysecond int64
 }
 type Os_shutdown_req struct { //os.shutdown
-	delay       bool
-	delaysecond int64
+	Delay       bool
+	Delaysecond int64
 }
 type Os_setpwd_req struct { //os.setpwd
-	username string
-	passwd   string
+	Username string
+	Passwd   string
 }
 
 //==============================================
 type Firewall_set_req struct { //firewall.setrules
 	Rulename []string
-	Op       uint8 //at present,just support the code defined in 'const'
+	Op       string //at present,just support the code defined in 'const'
 }
 
 //==============================================

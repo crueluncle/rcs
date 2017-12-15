@@ -229,12 +229,12 @@ func setpasswd(username, passwd string) error {
 	}
 	return nil
 }
-func setrules(rulenamelist []string, opswitch uint8) error {
+func setrules(rulenamelist []string, opswitch string) error {
 	//netsh advfirewall firewall set rule name=$fwrule new enable=no
 	//netsh advfirewall firewall set rule name=$fwrule new enable=yes
 	//netsh advfirewall firewall delete rule name=$fwrule
 	switch opswitch {
-	case DisableRule:
+	case "disable":
 		for _, name := range rulenamelist {
 
 			cmd := exec.Command("netsh", "advfirewall", "firewall", "set", "rule", "name="+name, "new", "enable=no")
@@ -243,14 +243,14 @@ func setrules(rulenamelist []string, opswitch uint8) error {
 			}
 
 		}
-	case EnableRule:
+	case "enable":
 		for _, name := range rulenamelist {
 			cmd := exec.Command("netsh", "advfirewall", "firewall", "set", "rule", "name="+name, "new", "enable=yes")
 			if output, err := cmd.CombinedOutput(); err != nil {
 				return errors.New("In rule: " + name + " error: " + string(output) + err.Error())
 			}
 		}
-	case DeleteRule:
+	case "del":
 		for _, name := range rulenamelist {
 			cmd := exec.Command("netsh", "advfirewall", "firewall", "delete", "rule", "name="+name)
 			if output, err := cmd.CombinedOutput(); err != nil {
