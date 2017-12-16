@@ -2,8 +2,10 @@ package modules
 
 import (
 	"errors"
+	"log"
 	"net"
 	"net/rpc"
+	"reflect"
 )
 
 type Service struct {
@@ -11,6 +13,7 @@ type Service struct {
 }
 
 func (s Service) Call(req Atomicrequest, res *Atomicresponse) error {
+	log.Println("Got Atomicrequest call:", reflect.TypeOf(req).String(), req)
 	return req.Handle(res)
 }
 func InitRPCserver(conn *net.TCPConn) error {

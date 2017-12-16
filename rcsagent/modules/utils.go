@@ -123,9 +123,12 @@ func Isexistdir(name string) (isexist, isdir bool, err error) { //是否存在,�
 	if os.IsNotExist(err) {
 		return false, false, err
 	}
-	isexist = true
-	isdir = fi.IsDir()
-	return isexist, isdir, err
+	if fi != nil {
+		isexist = true
+		isdir = fi.IsDir()
+		return isexist, isdir, err
+	}
+	return false, false, err
 }
 func Listmatchfiles(dirname string, filenamepattern string) (error, []string) { //列出给定目录下，文件名匹配filenamepattern的所有文件
 	ex, dr, err := Isexistdir(dirname)

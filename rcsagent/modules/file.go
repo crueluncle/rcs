@@ -41,6 +41,7 @@ func (seb File_cp_req) Handle(res *Atomicresponse) error {
 		copy file or directory from source to destination , overwrite
 		1.if source is a single file,just copy to the named destination file , overwrite
 		2.if source is a directory,recursive copy the all files with the directory or not,determined by the 'Wodir' filed
+		3.if source is a directory,and non file bellows there,Handle do nothing and return nil
 	*/
 	withoutdir := seb.Wodir
 	sfilepath := seb.Sfilepath
@@ -52,6 +53,7 @@ func (seb File_cp_req) Handle(res *Atomicresponse) error {
 		return err
 	}
 	if !dr {
+
 		err := cpfile(sfilepath, dfilepath)
 		if err != nil {
 			res.Flag = false
@@ -61,6 +63,7 @@ func (seb File_cp_req) Handle(res *Atomicresponse) error {
 		res.Flag = true
 		res.Result = "success!"
 	} else { //is a directory ,recursive
+
 		wf := func(path string, f os.FileInfo, err error) error {
 			if f == nil {
 				return err
@@ -69,8 +72,10 @@ func (seb File_cp_req) Handle(res *Atomicresponse) error {
 				return nil
 			}
 			if withoutdir { //just copy the sfilepath`s bellows
+
 				return cpfile(path, filepath.Join(dfilepath, strings.TrimPrefix(path, sfilepath)))
 			} else { //copy the directory 'sfilepath' and it`s bellows
+
 				return cpfile(path, filepath.Join(dfilepath, strings.TrimPrefix(path, filepath.Clean(sfilepath+`/../`))))
 			}
 		}

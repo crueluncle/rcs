@@ -32,6 +32,12 @@ var RedisClient *redis.Pool
 
 func init() {
 	var errs error
+	if err := os.MkdirAll(`log`, 0666); err != nil {
+		log.Fatalln(err)
+	}
+	if err := os.MkdirAll(`cfg`, 0666); err != nil {
+		log.Fatalln(err)
+	}
 	logfile, errs = os.OpenFile("log/rcsqueryapi.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0777)
 	if errs != nil {
 		log.Fatal(errs)

@@ -49,6 +49,12 @@ func getfilei(md5 string) *FileInfo {
 	return FileReg[md5]
 }
 func init() {
+	if err := os.MkdirAll(`log`, 0666); err != nil {
+		log.Fatalln(err)
+	}
+	if err := os.MkdirAll(`cfg`, 0666); err != nil {
+		log.Fatalln(err)
+	}
 	logfile, errs := os.OpenFile("log/rcsfileregistry.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0777)
 	if errs != nil {
 		log.Fatal(errs)
@@ -62,7 +68,7 @@ func init() {
 	//处理配置文件
 	defcfg := `;section Base defines some params,'SectionName' in []  must be uniq globally.
 [BASE]
-upaddr             = 0.0.0.0:8096               
+upaddr             = 0.0.0.0:8096
 downaddr        = 127.0.0.1:8098`
 	cf := utils.HandleConfigFile("cfg/rcsfileregistry.ini", defcfg)
 	upaddr = cf.MustValue("BASE", "upaddr")

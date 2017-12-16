@@ -26,6 +26,12 @@ var logfile *os.File
 var errs error
 
 func init() {
+	if err := os.MkdirAll(`log`, 0666); err != nil {
+		log.Fatalln(err)
+	}
+	if err := os.MkdirAll(`cfg`, 0666); err != nil {
+		log.Fatalln(err)
+	}
 	logfile, errs = os.OpenFile("log/rcscli.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0777)
 	if errs != nil {
 		log.Fatal(errs)
@@ -49,19 +55,19 @@ func main() {
 	t := flag.String("t", "", "-t 127.0.0.1,127.0.0.2... ,specify the targets")
 	tf := flag.String("tf", "", "-tf iplist.txt ,specify the file with targets,ignored when -t option is set")
 	flag.Parse()
-	if t != nil && tf != nil {
-		log.Fatalln("-t and -tf can not be both specified,pls check!")
-	}
+
 	if len(os.Args) < 4 {
 		log.Fatalln("Params not enough,pls check!")
 	}
-
+	if *t != "" && *tf != "" {
+		log.Fatalln("-t and -tf can not be both specified,pls check!")
+	}
 	op := os.Args[3]
 	targets := make([]string, 0)
-	if t != nil {
+	if *t != "" {
 		targets = strings.Split(*t, ",")
 	}
-	if tf != nil {
+	if *tf != "" {
 		ips, err := cli.ReadlineAsSlice(*tf)
 		if err != nil {
 			log.Fatalln(err)
@@ -257,7 +263,8 @@ func main() {
 	}
 
 	uuid := vv.Uuid
-	var suc, fad *int32
+	suc := new(int32)
+	fad := new(int32)
 	an := len(rr.Targets)
 	wg := new(sync.WaitGroup)
 	wg.Add(an)
