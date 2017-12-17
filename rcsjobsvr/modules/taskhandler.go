@@ -7,9 +7,11 @@ import (
 	"rcs/rcsagent/modules"
 	"rcs/utils"
 	//	"reflect"
+	"net/url"
 	"path/filepath"
 	"runtime/debug"
-
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -38,39 +40,26 @@ func (th *taskHandler) Run() {
 			os.Exit(1)
 		}
 	}()
-	var FileUrl, FileMd5 string
-	var dlf_err error
 	for v := range th.tasks {
 		if task, ok := v.(*utils.RcsTaskReq); ok {
 			log.Println("Got a task request:", task.Runid)
-			switch v := task.Atomicrequest.(type) { //just two Atomicrequest type should be download the file
-			case modules.Cmd_script_req:
-				FileUrl = v.FileUrl
-				FileMd5 = v.FileMd5
-			case modules.File_push_req:
-				FileUrl = v.Sfileurl
-				FileMd5 = v.Sfilemd5
-			default:
-			}
-			if FileUrl != "" && FileMd5 != "" {
-				dlf_err = modules.Downloadfilefromurl(FileUrl, FileMd5, filepath.Join(th.fcdir, FileMd5))
-			}
+			once := new(sync.Once)
 			for _, ip := range task.Targets {
-				go th.handlerequest(task.Runid, ip, task.Atomicrequest, dlf_err) //对于一个任务中的多个agent进行并发处理；task.AtomicReq是一个interface(引用变量),非并发安全
+				go th.handlerequest(task.Runid, ip, task.Atomicrequest, once) //对于一个任务中的多个agent进行并发处理；task.AtomicReq是一个interface(引用变量),非并发安全
 			}
 		}
 	}
 
 }
-func (th *taskHandler) handlerequest(rid, ip string, req modules.Atomicrequest, dlf_err error) {
-	resp, err := th.rpccall(rid, ip, req, dlf_err)
+func (th *taskHandler) handlerequest(rid, ip string, req modules.Atomicrequest, once *sync.Once) {
+	resp, err := th.rpccall(rid, ip, req, once)
 	if err != nil {
 		log.Println("Rpc call:", err)
 		return
 	}
 	th.resps <- resp
 }
-func (th *taskHandler) rpccall(rid string, ip string, req modules.Atomicrequest, dlf_err error) (response *utils.RcsTaskResp, err error) {
+func (th *taskHandler) rpccall(rid string, ip string, req modules.Atomicrequest, once *sync.Once) (response *utils.RcsTaskResp, err error) {
 	response = new(utils.RcsTaskResp)
 	response.Runid = rid
 	response.AgentIP = ip
@@ -83,49 +72,61 @@ func (th *taskHandler) rpccall(rid string, ip string, req modules.Atomicrequest,
 	defer ai.doing.Unlock()
 	rcli := ai.rpcli
 	service := `Service.Call`
-	args := req
+	var args modules.Atomicrequest
+
 	resp := new(modules.Atomicresponse)
-	if dlf_err != nil { //文件下载失败,直接返回
-		response.Flag = false
-		response.Result = dlf_err.Error()
-		return response, nil
-	}
-	/*
-		FileUrl := args.GetFileUrl()
-		FileMd5 := args.GetFileMd5()
-
-		if FileUrl != "" && FileMd5 != "" { //实际是Script_Run_Req或File_Push_Req两种请求
-			u, e := url.Parse(FileUrl)
-			if e != nil {
-				log.Println(e)
-				response.Flag = false
-				response.Result = e.Error()
-				return response, nil
-			}
-			filename := u.Query().Get("rename")
-			if filename == "" {
-				filename = filepath.Base(strings.Split(u.RequestURI(), "?")[0])
-			}
-			if filename == "" {
-				response.Flag = false
-				response.Result = "srcfileurl is invalid:" + FileUrl
-				return response, nil
-			}
-			//给每个agent的url地址可能不一样，因为agent可能从内网连过来，也可能从外网连过来
-			jobsvrip := strings.Split(ai.conn.LocalAddr().String(), ":")[0]
-			//log.Println("jobsvrip:", rid, jobsvrip)
-			u.Host = jobsvrip + ":" + strings.Split(th.fcaddr, ":")[1]
-			u.Path = "/" + th.fcdir + "/" + FileMd5 + "/" + filename
-			th.setUrlPending.Lock() //由于RpcCallRequest是一个interface(引用变量)，非并发安全,因此在改变变量时要加锁,实际这里降低了一定的并发性能
-			args.SetFileUrl(u.String())
+	var FileUrl, FileMd5 string
+	dl_file := func() {
+		if err := modules.Downloadfilefromurl(FileUrl, FileMd5, filepath.Join(th.fcdir, FileMd5)); err != nil {
+			log.Println(err)
+			return
 		}
-	*/
-	switch v := args.(type) { //just two Atomicrequest type should be reset the fileurl
+	}
+	set_url4agent := func(FileUrl, FileMd5 string) (string, error) {
+		u, e := url.Parse(FileUrl)
+		if e != nil {
+			return "", e
+		}
+		filename := u.Query().Get("rename")
+		if filename == "" {
+			filename = filepath.Base(strings.Split(u.RequestURI(), "?")[0])
+		}
+		if filename == "" {
+			return "", errors.New("srcfileurl is invalid:" + FileUrl)
+		}
+		//给每个agent的url地址可能不一样，因为agent可能从内网连过来，也可能从外网连过来
+		jobsvrip := strings.Split(ai.conn.LocalAddr().String(), ":")[0]
+		u.Host = jobsvrip + ":" + strings.Split(th.fcaddr, ":")[1]
+		u.Path = "/" + th.fcdir + "/" + FileMd5 + "/" + filename
+		return u.String(), nil
+	}
+	switch v := req.(type) { //just two Atomicrequest type should be download the file
 	case modules.Cmd_script_req:
-
+		FileUrl = v.FileUrl
+		FileMd5 = v.FileMd5
+		once.Do(dl_file)
+		newurl, err := set_url4agent(FileUrl, FileMd5)
+		if err != nil {
+			response.Flag = false
+			response.Result = err.Error()
+			return response, nil
+		}
+		v.FileUrl = newurl
+		args = v
 	case modules.File_push_req:
-
+		FileUrl = v.Sfileurl
+		FileMd5 = v.Sfilemd5
+		once.Do(dl_file)
+		newurl, err := set_url4agent(FileUrl, FileMd5)
+		if err != nil {
+			response.Flag = false
+			response.Result = err.Error()
+			return response, nil
+		}
+		v.Sfileurl = newurl
+		args = v
 	default:
+		args = req
 	}
 	divcall := rcli.Go(service, &args, resp, nil) //异步调用并设置超时时间
 	select {
