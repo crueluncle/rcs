@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,7 +19,7 @@ import (
 
 func Downloadfilefromurl(srcfileurl, srcfilemd5, dstdir string) error {
 	//目标文件名与url中uri一致，若文件存在且md5一致则不会下载
-	//	log.Println("srcfileurl:", srcfileurl, "dstdir:", dstdir)
+	log.Println("srcfileurl:", srcfileurl, "dstdir:", dstdir)
 	u, e := url.Parse(srcfileurl)
 	if e != nil {
 		return e

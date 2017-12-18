@@ -57,7 +57,7 @@ func main() {
 	flag.Parse()
 
 	if len(os.Args) < 4 {
-		log.Fatalln("Params not enough,pls check!")
+		log.Fatalln("Params not enough,pls check:", `rcs [-t|-tf] targets op args `)
 	}
 	if *t != "" && *tf != "" {
 		log.Fatalln("-t and -tf can not be both specified,pls check!")
@@ -113,7 +113,7 @@ func main() {
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 
 	case "file.cp":
-		if len(os.Args) < 7 {
+		if len(os.Args) < 6 {
 			log.Println("Params not enough,pls check!")
 			log.Println(`rcs [-t|-tf] ` + op + ` srcpath dstpath [true|false]`)
 			return
@@ -121,18 +121,22 @@ func main() {
 		atomicReq := new(modules.File_cp_req)
 		atomicReq.Sfilepath = os.Args[4]
 		atomicReq.Dfilepath = os.Args[5]
-		atomicReq.Wodir, _ = strconv.ParseBool(os.Args[6])
+		if len(os.Args) > 6 {
+			atomicReq.Wodir, _ = strconv.ParseBool(os.Args[6])
+		}
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 
 	case "file.del":
-		if len(os.Args) < 6 {
+		if len(os.Args) < 5 {
 			log.Println("Params not enough,pls check!")
 			log.Println(`rcs [-t|-tf] ` + op + ` srcpath [true|false]`)
 			return
 		}
 		atomicReq := new(modules.File_del_req)
 		atomicReq.Sfilepath = os.Args[4]
-		atomicReq.Wobak, _ = strconv.ParseBool(os.Args[5])
+		if len(os.Args) > 5 {
+			atomicReq.Wobak, _ = strconv.ParseBool(os.Args[5])
+		}
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 
 	case "file.grep":
@@ -187,7 +191,7 @@ func main() {
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 
 	case "cmd.script":
-		if len(os.Args) < 6 {
+		if len(os.Args) < 5 {
 			log.Println("Params not enough,pls check!")
 			return
 		}
@@ -203,25 +207,27 @@ func main() {
 		atomicReq := new(modules.Cmd_script_req)
 		atomicReq.FileUrl = postfile_rsp.Url
 		atomicReq.FileMd5 = postfile_rsp.Md5str
-		atomicReq.ScriptArgs = strings.Split(os.Args[5], " ")
+		if len(os.Args) > 5 {
+			atomicReq.ScriptArgs = strings.Split(os.Args[5], " ")
+		}
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "os.restart":
-		if len(os.Args) < 6 {
-			log.Println("Params not enough,pls check!")
-			return
-		}
 		atomicReq := new(modules.Os_restart_req)
-		atomicReq.Delay, _ = strconv.ParseBool(os.Args[4])
-		atomicReq.Delaysecond, _ = strconv.ParseInt(os.Args[5], 10, 64)
+		if len(os.Args) > 4 {
+			atomicReq.Delay, _ = strconv.ParseBool(os.Args[4])
+		}
+		if len(os.Args) > 5 {
+			atomicReq.Delaysecond, _ = strconv.ParseInt(os.Args[5], 10, 64)
+		}
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "os.shutdown":
-		if len(os.Args) < 6 {
-			log.Println("Params not enough,pls check!")
-			return
-		}
 		atomicReq := new(modules.Os_shutdown_req)
-		atomicReq.Delay, _ = strconv.ParseBool(os.Args[4])
-		atomicReq.Delaysecond, _ = strconv.ParseInt(os.Args[5], 10, 64)
+		if len(os.Args) > 4 {
+			atomicReq.Delay, _ = strconv.ParseBool(os.Args[4])
+		}
+		if len(os.Args) > 5 {
+			atomicReq.Delaysecond, _ = strconv.ParseInt(os.Args[5], 10, 64)
+		}
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "os.setpwd":
 		if len(os.Args) < 6 {
@@ -242,13 +248,15 @@ func main() {
 		atomicReq.Op = os.Args[5]
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "process.stop":
-		if len(os.Args) < 6 {
+		if len(os.Args) < 5 {
 			log.Println("Params not enough,pls check!")
 			return
 		}
 		atomicReq := new(modules.Process_stop_req)
 		atomicReq.Imagename = strings.Split(os.Args[4], ",")
-		atomicReq.Doforce, _ = strconv.ParseBool(os.Args[5])
+		if len(os.Args) > 5 {
+			atomicReq.Doforce, _ = strconv.ParseBool(os.Args[5])
+		}
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "rcs.ping":
 		atomicReq := new(modules.Rcs_ping_req)

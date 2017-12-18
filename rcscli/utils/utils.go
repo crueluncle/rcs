@@ -21,6 +21,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	//"github.com/qiniu/iconv"
 )
 
 const (

@@ -54,7 +54,7 @@ func (th *taskHandler) Run() {
 func (th *taskHandler) handlerequest(rid, ip string, req modules.Atomicrequest, once *sync.Once) {
 	resp, err := th.rpccall(rid, ip, req, once)
 	if err != nil {
-		log.Println("Rpc call:", err)
+		log.Println("th.rpccall:", err)
 		return
 	}
 	th.resps <- resp
@@ -78,9 +78,10 @@ func (th *taskHandler) rpccall(rid string, ip string, req modules.Atomicrequest,
 	var FileUrl, FileMd5 string
 	dl_file := func() {
 		if err := modules.Downloadfilefromurl(FileUrl, FileMd5, filepath.Join(th.fcdir, FileMd5)); err != nil {
-			log.Println(err)
+			log.Println("file cached faild:", FileUrl, err)
 			return
 		}
+		log.Println("file cached success:", FileUrl)
 	}
 	set_url4agent := func(FileUrl, FileMd5 string) (string, error) {
 		u, e := url.Parse(FileUrl)
@@ -101,7 +102,7 @@ func (th *taskHandler) rpccall(rid string, ip string, req modules.Atomicrequest,
 		return u.String(), nil
 	}
 	switch v := req.(type) { //just two Atomicrequest type should be download the file
-	case modules.Cmd_script_req:
+	case *modules.Cmd_script_req:
 		FileUrl = v.FileUrl
 		FileMd5 = v.FileMd5
 		once.Do(dl_file)
@@ -113,7 +114,7 @@ func (th *taskHandler) rpccall(rid string, ip string, req modules.Atomicrequest,
 		}
 		v.FileUrl = newurl
 		args = v
-	case modules.File_push_req:
+	case *modules.File_push_req:
 		FileUrl = v.Sfileurl
 		FileMd5 = v.Sfilemd5
 		once.Do(dl_file)
@@ -133,7 +134,6 @@ func (th *taskHandler) rpccall(rid string, ip string, req modules.Atomicrequest,
 	case replaycall := <-divcall.Done:
 		if replaycall.Error != nil {
 			resp.Result = resp.Result + replaycall.Error.Error()
-			log.Println("Atomicrequest call:", replaycall.Error.Error())
 		}
 	case <-time.After(time.Second * time.Duration(th.rpcto)):
 		resp.Result = "Atomicrequest call:timeout:"
