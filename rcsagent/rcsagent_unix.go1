@@ -15,6 +15,11 @@ import (
 )
 
 var logf *os.File //将start/stop/run中逻辑代码的日志记录到文件
+var (
+	RconT         int    //agent断开jobsvr连接后，在多长的随机时间内重连jobsvr,agent数量可能较多，随机重连避免风暴
+	JobsvrAddr    string // jobsvr地址
+	FilecacheAddr string //filecacheSvr地址
+)
 
 func init() {
 	gob.Register(&modules.File_push_req{})
@@ -54,9 +59,9 @@ func init() {
 	jobsvrAddr        = 127.0.0.1:9529
 	filecacheAddr     = 127.0.0.1:9530`
 	cf := utils.HandleConfigFile(inifilename, defcfg)
-	modules.RconT = cf.MustInt("BASE", "rconT")
-	modules.JobsvrAddr = cf.MustValue("BASE", "jobsvrAddr")
-	modules.FilecacheAddr = cf.MustValue("BASE", "filecacheAddr")
+	RconT = cf.MustInt("BASE", "rconT")
+	JobsvrAddr = cf.MustValue("BASE", "jobsvrAddr")
+	FilecacheAddr = cf.MustValue("BASE", "filecacheAddr")
 }
 
 func main() {
@@ -72,7 +77,7 @@ func main() {
 	var tc *utils.TClient
 	var agentServe utils.TFunc = modules.InitRPCserver
 
-	if e, tc = utils.NewTClient(modules.JobsvrAddr, modules.RconT, 0, true, agentServe); tc != nil {
+	if e, tc = utils.NewTClient(JobsvrAddr, RconT, 0, true, agentServe); tc != nil {
 		log.Fatalln(tc.Connect())
 	}
 	log.Fatalln(e)

@@ -48,7 +48,7 @@ func (am TestrpcServer) HandleConn(conn *net.TCPConn) error {
 
 	args := new(modules.File_cp_req)
 	args.Sfilepath = `D:\Install`
-	args.Dfilepath = `D:\InstallBak`
+	args.Dfilepath = `D:\Install-bk`
 	var argss modules.Atomicrequest
 	argss = args
 	for {

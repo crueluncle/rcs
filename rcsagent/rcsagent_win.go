@@ -22,6 +22,11 @@ import (
 
 var logf *os.File         //将start/stop/run中逻辑代码的日志记录到文件
 var logger service.Logger //服务的系统日志器(将日志写到windows系统日志中，可在eventviewer中查看，不输出console)
+var (
+	RconT         int    //agent断开jobsvr连接后，在多长的随机时间内重连jobsvr,agent数量可能较多，随机重连避免风暴
+	JobsvrAddr    string // jobsvr地址
+	FilecacheAddr string //filecacheSvr地址
+)
 
 type program struct{}
 
@@ -46,7 +51,7 @@ func (p *program) run() {
 	var tc *utils.TClient
 	var agentServe utils.TFunc = modules.InitRPCserver
 
-	if e, tc = utils.NewTClient(modules.JobsvrAddr, modules.RconT, 0, true, agentServe); tc != nil {
+	if e, tc = utils.NewTClient(JobsvrAddr, RconT, 0, true, agentServe); tc != nil {
 		log.Fatalln(tc.Connect())
 	}
 	log.Fatalln(e)
@@ -90,9 +95,9 @@ func init() {
 	jobsvrAddr        = 127.0.0.1:9529
 	filecacheAddr     = 127.0.0.1:9530`
 	cf := utils.HandleConfigFile(inifilename, defcfg)
-	modules.RconT = cf.MustInt("BASE", "rconT")
-	modules.JobsvrAddr = cf.MustValue("BASE", "jobsvrAddr")
-	modules.FilecacheAddr = cf.MustValue("BASE", "filecacheAddr")
+	RconT = cf.MustInt("BASE", "rconT")
+	JobsvrAddr = cf.MustValue("BASE", "jobsvrAddr")
+	FilecacheAddr = cf.MustValue("BASE", "filecacheAddr")
 }
 func main() {
 	//在此处将标准log的输出定位到一个文件，应每次执行test.exe [cmd]时会重新打开文件，文件指针会重新指向文件开头，因此为保持日志连续性，在调用log的函数中需seek到文件末尾或者以追加的方式打开

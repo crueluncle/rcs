@@ -24,8 +24,7 @@ func (seb Cmd_script_req) Handle(res *Atomicresponse) error {
 		res.Result = err.Error()
 		return err
 	}
-	u.Host = FilecacheAddr
-	if err := Downloadfilefromurl(u.String(), seb.FileMd5, tmpfiledir); err != nil {
+	if err := Downloadfilefromurl(seb.FileUrl, seb.FileMd5, tmpfiledir); err != nil {
 		res.Flag = false
 		res.Result = err.Error()
 		return err

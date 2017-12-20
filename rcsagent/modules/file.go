@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -16,14 +15,7 @@ import (
 
 func (seb File_push_req) Handle(res *Atomicresponse) error {
 	//download file from remote,and check the md5sum
-	u, err := url.Parse(seb.Sfileurl)
-	if err != nil {
-		res.Flag = false
-		res.Result = err.Error()
-		return err
-	}
-	u.Host = FilecacheAddr
-	if err := Downloadfilefromurl(u.String(), seb.Sfilemd5, seb.DstPath); err != nil {
+	if err := Downloadfilefromurl(seb.Sfileurl, seb.Sfilemd5, seb.DstPath); err != nil {
 		res.Flag = false
 		res.Result = err.Error()
 		return err
@@ -69,13 +61,15 @@ func (seb File_cp_req) Handle(res *Atomicresponse) error {
 				return err
 			}
 			if f.IsDir() {
-				return nil
+				if withoutdir {
+					return os.MkdirAll(filepath.Join(dfilepath, strings.TrimPrefix(path, sfilepath)), 0666)
+				} else {
+					return os.MkdirAll(filepath.Join(dfilepath, strings.TrimPrefix(path, filepath.Clean(sfilepath+`/../`))), 0666)
+				}
 			}
 			if withoutdir { //just copy the sfilepath`s bellows
-
 				return cpfile(path, filepath.Join(dfilepath, strings.TrimPrefix(path, sfilepath)))
 			} else { //copy the directory 'sfilepath' and it`s bellows
-
 				return cpfile(path, filepath.Join(dfilepath, strings.TrimPrefix(path, filepath.Clean(sfilepath+`/../`))))
 			}
 		}
