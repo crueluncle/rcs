@@ -26,6 +26,10 @@ type File_del_req struct { //file.del
 	Sfilepath string //recursive if it`s a directory
 	Wobak     bool   //without backup,false:with backup,true:without backup
 }
+type File_rename_req struct {
+	Sfilepath string
+	Newname   string
+}
 type File_grep_req struct { //file.grep
 	Sfilepath  string
 	Patternstr string //regular expression
@@ -46,6 +50,31 @@ type File_md5sum_req struct { //file.md5sum
 }
 type File_ckmd5sum_req struct { //similar to md5sum -c md5file file.ckmd5sum
 	Md5filepath string
+}
+type File_zip_req struct {
+	Sfilepath string // is a file or directory
+	Dstdir    string //if not specified,same as the Sfilepath`s dir
+}
+type File_unzip_req struct {
+	Zipfilepath string //specify the zip filepath
+	Dstdir      string //where unzip to,if not specified,same as the Zipfilepath`s dir
+	Wdir        bool
+}
+type File_gzip_req struct {
+	Sfilepath string // is a file or directory
+	Dstdir    string //if not specified,same as the Sfilepath`s dir
+}
+type File_gunzip_req struct {
+	Zipfilepath string //specify the zip filepath
+	Dstdir      string //where unzip to,if not specified,same as the Zipfilepath`s dir
+}
+type File_tar_req struct {
+	Sfilepath string // is a file or directory
+	Dstdir    string //if not specified,same as the Sfilepath`s dir
+}
+type File_untar_req struct {
+	Zipfilepath string //specify the zip filepath
+	Dstdir      string //where unzip to,if not specified,same as the Zipfilepath`s dir
 }
 
 //==============================================
@@ -93,11 +122,14 @@ type Rcs_ping_req struct { //rcs.ping
 	"file.pull"   -- File_pull_req
 	"file.cp"     -- File_cp_req
 	"file.del"    -- File_del_req
+	"file.rename"    -- File_rename_req
 	"file.grep"   -- File_grep_req
 	"file.replace" --File_replace_req
 	"file.mreplace" --File_mreplace_req
 	"file.md5sum"   --File_md5sum_req
 	"file.ckmd5sum" --File_ckmd5sum_req
+	"file.zip"      --File_zip_req
+	"file.unzip"	--File_unzip_req
 	"cmd.script"    --Cmd.script_req
 	"os.restart"    --Os_restart_req
 	"os.shutdown"   -- Os_shutdown_req

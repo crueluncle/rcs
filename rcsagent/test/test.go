@@ -1,65 +1,57 @@
 package main
 
 import (
+	"archive/zip"
+	"io"
 	"log"
-	"net"
-	"net/rpc"
-
-	"encoding/gob"
-	"rcs/rcsagent/modules"
-	"rcs/utils"
-	"time"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
-type TestrpcServer struct {
-}
-
-func init() {
-	gob.Register(&modules.File_push_req{})
-	gob.Register(&modules.File_pull_req{})
-	gob.Register(&modules.File_cp_req{})
-	gob.Register(&modules.File_del_req{})
-	gob.Register(&modules.File_grep_req{})
-	gob.Register(&modules.File_replace_req{})
-	gob.Register(&modules.File_mreplace_req{})
-	gob.Register(&modules.File_md5sum_req{})
-	gob.Register(&modules.File_ckmd5sum_req{})
-	gob.Register(&modules.Cmd_script_req{})
-	gob.Register(&modules.Os_restart_req{})
-	gob.Register(&modules.Os_shutdown_req{})
-	gob.Register(&modules.Os_setpwd_req{})
-	gob.Register(&modules.Firewall_set_req{})
-	gob.Register(&modules.Process_stop_req{})
-	gob.Register(&modules.Rcs_ping_req{})
-}
 func main() {
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
-	var trs TestrpcServer
-	if _, ams := utils.NewTServer("0.0.0.0:9529", trs); ams != nil {
-		log.Fatalln(ams.Serve())
-	}
-
+	ss := `D:\Install-bk\Install.zip`
+	//dd := `c:\xxxx`
+	log.Println(unzip(ss, "", true))
 }
-
-//D:\\PGP\\games D:\\PGP\\bak\ false
-func (am TestrpcServer) HandleConn(conn *net.TCPConn) error {
-	rcli := rpc.NewClient(conn)
-	resp := new(modules.Atomicresponse)
-
-	args := new(modules.File_cp_req)
-	args.Sfilepath = `D:\Install`
-	args.Dfilepath = `D:\Install-bk`
-	var argss modules.Atomicrequest
-	argss = args
-	for {
-		err := rcli.Call("Service.Call", &argss, resp)
-		if err != nil {
-			log.Println(err)
-			break
-		}
-		log.Println(resp.Flag)
-		log.Println(resp.Result)
-		time.Sleep(time.Minute)
+func unzip(srczipfile, dstdir string, Wdir bool) error {
+	if dstdir == "" {
+		dstdir = filepath.Dir(srczipfile)
 	}
+	var dest string
+	if Wdir {
+		dest = filepath.Join(dstdir, strings.TrimSuffix(filepath.Base(srczipfile), filepath.Ext(srczipfile)))
+	} else {
+		dest = dstdir
+	}
+
+	unzip_file, err := zip.OpenReader(srczipfile)
+	if err != nil {
+		return err
+	}
+	os.MkdirAll(dest, 0755)
+	for _, f := range unzip_file.File {
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		path := filepath.Join(dest, f.Name)
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(path, f.Mode())
+		} else {
+			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return err
+			}
+			_, err = io.Copy(f, rc)
+			if err != nil {
+				if err != io.EOF {
+					return err
+				}
+			}
+			f.Close()
+		}
+	}
+	unzip_file.Close()
 	return nil
 }

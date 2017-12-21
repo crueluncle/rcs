@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"archive/zip"
 	"bufio"
 	"fmt"
 	"io"
@@ -110,6 +111,18 @@ func (seb File_del_req) Handle(res *Atomicresponse) error {
 		res.Result = "success,backup in " + dfilepath
 
 	}
+	return nil
+}
+func (seb File_rename_req) Handle(res *Atomicresponse) error {
+	dfilepath := filepath.Join(filepath.Dir(filepath.Clean(seb.Sfilepath)), seb.Newname)
+	err := os.Rename(seb.Sfilepath, dfilepath) //call os.rename for backup and delete
+	if err != nil {
+		res.Flag = false
+		res.Result = err.Error()
+		return err
+	}
+	res.Flag = true
+	res.Result = "success"
 	return nil
 }
 func (seb File_grep_req) Handle(res *Atomicresponse) error {
@@ -276,5 +289,49 @@ func (seb File_ckmd5sum_req) Handle(res *Atomicresponse) error {
 	}
 	res.Flag = true
 	res.Result += fmt.Sprintf("------Statistics,RIGHT:%d,WRONG:%d,ERROR:%d------", RIGHT, WRONG, ERR)
+	return nil
+}
+func (seb File_zip_req) Handle(res *Atomicresponse) error {
+	return nil
+}
+func (seb File_unzip_req) Handle(res *Atomicresponse) error {
+	if seb.Dstdir == "" {
+		seb.Dstdir = filepath.Dir(seb.Zipfilepath)
+	}
+	var dest string
+	if seb.Wdir {
+		dest = filepath.Join(seb.Dstdir, strings.TrimSuffix(filepath.Base(seb.Zipfilepath), filepath.Ext(seb.Zipfilepath)))
+	} else {
+		dest = seb.Dstdir
+	}
+
+	unzip_file, err := zip.OpenReader(seb.Zipfilepath)
+	if err != nil {
+		return err
+	}
+	os.MkdirAll(dest, 0755)
+	for _, f := range unzip_file.File {
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		path := filepath.Join(dest, f.Name)
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(path, f.Mode())
+		} else {
+			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return err
+			}
+			_, err = io.Copy(f, rc)
+			if err != nil {
+				if err != io.EOF {
+					return err
+				}
+			}
+			f.Close()
+		}
+	}
+	unzip_file.Close()
 	return nil
 }

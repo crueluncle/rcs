@@ -138,7 +138,16 @@ func main() {
 			atomicReq.Wobak, _ = strconv.ParseBool(os.Args[5])
 		}
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
-
+	case "file.rename":
+		if len(os.Args) < 6 {
+			log.Println("Params not enough,pls check!")
+			log.Println(`rcs [-t|-tf] ` + op + ` srcpath newname`)
+			return
+		}
+		atomicReq := new(modules.File_rename_req)
+		atomicReq.Sfilepath = os.Args[4]
+		atomicReq.Newname = os.Args[5]
+		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "file.grep":
 		if len(os.Args) < 6 {
 			log.Println("Params not enough,pls check!")
