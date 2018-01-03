@@ -2,10 +2,10 @@ package main
 
 import (
 	"archive/zip"
-	//	"bufio"
+	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	//	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -18,11 +18,19 @@ func main() {
 
 // 参数frm可以是文件或目录，不会给dst添加.zip扩展名
 func compress(sourcepath, zipfilename string) error {
+
+	zipfile, err := os.Create(zipfilename) // 建立zip文件
+	if err != nil {
+		return err
+	}
+	defer zipfile.Close()
+
 	buf := bytes.NewBuffer(make([]byte, 0, 10*1024*1024)) // 创建一个读写缓冲
 	zipwriter := zip.NewWriter(buf)                       // 用压缩器包装该缓冲
 	// 用Walk方法来将所有目录下的文件写入zipwriter
 	wf := func(path string, info os.FileInfo, err error) error {
-		var filecontent []byte
+		//var filecontent []byte
+		var br *bufio.Reader
 		if err != nil {
 			return filepath.SkipDir
 		}
@@ -34,12 +42,17 @@ func compress(sourcepath, zipfilename string) error {
 		if !info.IsDir() {
 			// 确定采用的压缩算法（这个是内建注册的deflate）
 			header.Method = 8
-			filecontent, err = ioutil.ReadFile(path) // 获取文件内容,内存占用高风险,改为bufio
+			fd, err := os.Open(path)
 			if err != nil {
-				return filepath.SkipDir
+				return err
 			}
+			br = bufio.NewReaderSize(fd, 10*1024*1024)
+			/*	filecontent, err = ioutil.ReadFile(path) // 获取文件内容,内存占用高风险,改为bufio
+				if err != nil {
+					return filepath.SkipDir
+				}*/
 		} else {
-			filecontent = nil
+			br = nil
 		}
 		// 上面的部分如果出错都返回filepath.SkipDir
 		// 下面的部分如果出错都直接返回该错误
@@ -48,8 +61,9 @@ func compress(sourcepath, zipfilename string) error {
 		if err != nil {
 			return err
 		}
-		_, err = w.Write(filecontent) // 非目录文件会写入数据，目录不会写入数据
-		if err != nil {               // 因为目录的内容可能会修改
+		//_, err = w.Write(filecontent) // 非目录文件会写入数据，目录不会写入数据
+		_, err = br.WriteTo(w)
+		if err != nil { // 因为目录的内容可能会修改
 			return err // 最关键的是我不知道咋获得目录文件的内容
 		}
 		return nil
@@ -59,12 +73,10 @@ func compress(sourcepath, zipfilename string) error {
 	if err != nil {
 		return err
 	}
-	zipwriter.Close()                      // 关闭压缩器，让压缩器缓冲中的数据写入buf
-	zipfile, err := os.Create(zipfilename) // 建立zip文件
-	if err != nil {
+	if err := zipwriter.Close(); err != nil {
 		return err
-	}
-	defer zipfile.Close()
+	} // 关闭压缩器，让压缩器缓冲中的数据写入buf;
+
 	_, err = buf.WriteTo(zipfile) // 将buf中的数据写入文件
 	if err != nil {
 		return err
