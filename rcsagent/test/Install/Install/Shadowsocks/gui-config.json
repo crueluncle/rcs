@@ -1,9 +1,0 @@
-{
-  "configs": [
-    {
-      "server": "HK2.ISS.TF",
-      "server_port": 8989,
-      "password": "84419998",
-      "method": "aes-256-cfb",
-      "remarks": "",
-      "auth": false
