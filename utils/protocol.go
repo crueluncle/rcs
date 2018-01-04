@@ -1,4 +1,4 @@
-//通讯协议处理,定义了一种通用性文本协议
+//定义一种通用性文本协议
 package utils
 
 import (
@@ -65,12 +65,10 @@ func (dp *myProtocal) Depack(srcdata []byte, pkgChan chan<- []byte) {
 	dp.lagecyMsg = srcdata[i:]
 }
 
-//获取截断消息
 func (dp *myProtocal) GetlagecyMsg() []byte {
 	return dp.lagecyMsg
 }
 
-//整形转换成字节
 func IntToBytes(n int) []byte {
 	x := int32(n)
 	bytesBuffer := bytes.NewBuffer([]byte{})
@@ -78,7 +76,6 @@ func IntToBytes(n int) []byte {
 	return bytesBuffer.Bytes()
 }
 
-//字节转换成整形
 func BytesToInt(b []byte) int {
 	bytesBuffer := bytes.NewBuffer(b)
 	var x int32

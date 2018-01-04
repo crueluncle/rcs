@@ -1,5 +1,4 @@
-/*gob序列化方法实际就是一种协议封包解包方法(gob传输不会出现粘包问题)，但gob在解包时必须已知封包时的具体结构，要在一条连接上传输多种数据结构(发送顺序未知)必须要有另外的方式告知对方本次发送的数据结构信息
-因此可将要发送的对象组织成type信息+reflect.value信息的形式来发送(两次发送原子化)，接收方读取两次(两次读取原子化)依据type信息来动态构建对象(简单DI库,接收方需实现注册需要接收的消息类型)
+/*gob序列化方法
 1.use the  reflect package to decode  any type struct data to interface{} with gob
 2.must regitst the struct in advance,otherwise the recvier connot decode the struct
 */
@@ -23,15 +22,15 @@ type Codecer interface {
 	Read(chan<- interface{}) error
 	Close() error
 }
-type msg struct { //任何消息组织成此结构：类型字符串+反射值
+type msg struct {
 	msgtyp  string
 	msgdata reflect.Value
 }
 type gobCodecer struct {
 	rwc    io.ReadWriteCloser
-	wlock  *sync.Mutex  // 确保发送操作原子化
-	enc    *gob.Encoder //使用gob编码
-	dec    *gob.Decoder //使用gob解码
+	wlock  *sync.Mutex // 确保发送操作原子化
+	enc    *gob.Encoder
+	dec    *gob.Decoder
 	encBuf *bufio.Writer
 	closed bool
 }

@@ -18,13 +18,11 @@ import (
 )
 
 func Downloadfilefromurl(srcfileurl, srcfilemd5, dstdir string) error {
-	//目标文件名与url中uri一致，若文件存在且md5一致则不会下载
 	log.Println("srcfileurl:", srcfileurl, "dstdir:", dstdir)
 	u, e := url.Parse(srcfileurl)
 	if e != nil {
 		return e
 	}
-	//bn := strings.Split(u.RequestURI(), `/`)
 	filename := u.Query().Get("rename")
 	if filename == "" {
 		filename = filepath.Base(u.RequestURI())
@@ -33,7 +31,6 @@ func Downloadfilefromurl(srcfileurl, srcfilemd5, dstdir string) error {
 		}
 	}
 	dstfilepath := filepath.Join(dstdir, filename)
-	//log.Println("dstfilepath:", dstfilepath)
 	if ex, dr, _ := Isexistdir(dstfilepath); ex && !dr {
 		md, err := FileMd5(dstfilepath)
 		if err == nil && md == srcfilemd5 {
@@ -114,7 +111,7 @@ func FileMd5(filepath string) (string, error) {
 	}
 	return "", inerr
 }
-func Isexistdir(name string) (isexist, isdir bool, err error) { //是否存在,是否为目录
+func Isexistdir(name string) (isexist, isdir bool, err error) {
 	fi, err := os.Stat(name)
 	if err == nil || os.IsExist(err) {
 		isexist = true
@@ -234,9 +231,6 @@ func setpasswd(username, passwd string) error {
 	return nil
 }
 func setrules(rulenamelist []string, opswitch string) error {
-	//netsh advfirewall firewall set rule name=$fwrule new enable=no
-	//netsh advfirewall firewall set rule name=$fwrule new enable=yes
-	//netsh advfirewall firewall delete rule name=$fwrule
 	switch opswitch {
 	case "disable":
 		for _, name := range rulenamelist {
@@ -267,8 +261,6 @@ func setrules(rulenamelist []string, opswitch string) error {
 	return nil
 }
 func stopprocess(Imagename []string, isforce bool) error {
-	//taskkill /IM $name
-	//taskkill /F /IM $name
 	if isforce {
 		for _, name := range Imagename {
 			cmd := exec.Command("taskkill", `/IM`, name)

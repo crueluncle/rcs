@@ -22,18 +22,18 @@ const (
 	Author    = "careyzhang"
 )
 
-type RcsTaskReqJson struct { //仅用于解析api接收到的task串
-	Runid     string          //执行态id,全局唯一,master负责生存用以标识本次调用,回传给调用者用于异步获取结果
-	Targets   []string        //ip集合
-	Tp        string          //原子操作类型
-	AtomicReq json.RawMessage //原子请求json串
+type RcsTaskReqJson struct {
+	Runid     string
+	Targets   []string
+	Tp        string
+	AtomicReq json.RawMessage
 }
-type RcsTaskReq struct { //
-	Runid   string   //执行态id,全局唯一,master负责生存用以标识本次调用,回传给调用者用于异步获取结果
-	Targets []string //ip集合
+type RcsTaskReq struct {
+	Runid   string
+	Targets []string
 	modules.Atomicrequest
 }
-type RcsTaskResp struct { /*jobsvr返回给master的响应结构,存储到redis中hash表中
+type RcsTaskResp struct { /*jobsvr返回给master的响应结构,存储到redis-hash表中
 	对于每一个执行态runid,生存2个hash表：runid:true存放flag为true的RcsResponse对象：hset 1000:true 1.1.1.1 result(为resutl字段的json串)
 	runid:false存放flag为false的RcsResponse对象;调用侧获取某个runid
 	成功失败的数量：hlen runid:true/hlen runid:false

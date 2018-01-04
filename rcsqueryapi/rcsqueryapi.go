@@ -1,4 +1,4 @@
-//redis查询api,调用方通过rid/ip来轮询task结果
+//redis查询api
 /*
  GET   http://127.0.0.1:9999/getsfnumsfromredis?uuid=xxxx       		//查询任务成功,失败agent数量,给调用方返回json结构
  GET   http://127.0.0.1:9999/getagentresultfromredis?uuid=xxxx&ip=yyyy      		//查询任务指定agent结果,给调用方返回json结构
@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	apiServer_addr, //对外提供服务需要监听的地址
+	apiServer_addr,
 	redisconstr, //redis连接地址
 	redispass string //redis认证密码
 	redisDB, //redis DB
@@ -74,11 +74,11 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-	http.HandleFunc("/gettasksfnums", getsfnumsfromredis)          //给调用方返回json结构
-	http.HandleFunc("/getagentresult", getagentresultfromredis)    //给调用方返回json结构
-	http.HandleFunc("/getagentresultinsucc", getagentresultinsucc) //给调用方返回json结构
-	http.HandleFunc("/getagentresultinfail", getagentresultinfail) //给调用方返回json结构
-	http.HandleFunc("/gettaskresult", getresultfromredis)          //给调用方返回json结构
+	http.HandleFunc("/gettasksfnums", getsfnumsfromredis)
+	http.HandleFunc("/getagentresult", getagentresultfromredis)
+	http.HandleFunc("/getagentresultinsucc", getagentresultinsucc)
+	http.HandleFunc("/getagentresultinfail", getagentresultinfail)
+	http.HandleFunc("/gettaskresult", getresultfromredis) //给调用方返回json结构
 
 	log.Println("Start rekapi...")
 	log.Println("RcshttpAPI:query ApiServer start...:", apiServer_addr)

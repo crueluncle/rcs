@@ -21,7 +21,7 @@ type GetAgentResultFromRedisResp struct {
 	Res       string
 }
 
-//redis连接池机制,当并发量大于最大rmaxactive时,可能会出现"连接池"满的报错,只能等待其它并发进程释放连接资源后续的请求才能继续;另并发量较大时会导致redis服务端time_wait较多,O层面应配置连接的快速回收
+//redis连接池机制,当并发量大于最大rmaxactive时,可能会出现"连接池"满的报错,只能等待其它并发进程释放连接资源后续的请求才能继续;另并发量较大时会导致redis服务端time_wait较多,OS层面可配置连接的快速回收
 func Newredisclient(Redisconstr, Redispass string, RedisDB, RMaxIdle, RMaxActive int) (*redis.Pool, error) {
 	RedisClient := &redis.Pool{ //以连接池的方式进行redis操作
 		Dial: func() (redis.Conn, error) {
