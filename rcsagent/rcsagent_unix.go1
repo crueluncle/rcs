@@ -30,6 +30,8 @@ func init() {
 	gob.Register(&modules.File_mreplace_req{})
 	gob.Register(&modules.File_md5sum_req{})
 	gob.Register(&modules.File_ckmd5sum_req{})
+	gob.Register(&modules.File_zip_req{})
+	gob.Register(&modules.File_unzip_req{})
 	gob.Register(&modules.Cmd_script_req{})
 	gob.Register(&modules.Os_restart_req{})
 	gob.Register(&modules.Os_shutdown_req{})
