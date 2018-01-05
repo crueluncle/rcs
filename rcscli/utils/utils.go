@@ -32,7 +32,7 @@ const (
 	getagentresultApiUrl       = `http://127.0.0.1:9528/getAgentResult`
 	getagentresultinsuccApiUrl = `http://127.0.0.1:9528/getagentresultinsucc`
 	getagentresultinfailApiUrl = `http://127.0.0.1:9528/getagentresultinfail`
-	TaskHandleTimeout          = 10                             //一个任务task执行默认超时时间
+	TaskHandleTimeout          = 600                            //一个任务task执行默认超时时间
 	Fileregistry               = `http://127.0.0.1:8096/upload` //文件仓库上传地址
 )
 

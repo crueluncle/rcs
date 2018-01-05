@@ -198,7 +198,31 @@ func main() {
 		atomicReq := new(modules.File_ckmd5sum_req)
 		atomicReq.Md5filepath = os.Args[4]
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
-
+	case "file.zip":
+		if len(os.Args) < 5 {
+			log.Println("Params not enough,pls check!")
+			return
+		}
+		atomicReq := new(modules.File_zip_req)
+		atomicReq.Sfilepath = os.Args[4]
+		if len(os.Args) > 5 {
+			atomicReq.Zipfilepath = os.Args[5]
+		}
+		rr.AtomicReq, _ = json.Marshal(atomicReq)
+	case "file.unzip":
+		if len(os.Args) < 5 {
+			log.Println("Params not enough,pls check!")
+			return
+		}
+		atomicReq := new(modules.File_unzip_req)
+		atomicReq.Zipfilepath = os.Args[4]
+		if len(os.Args) > 5 {
+			atomicReq.Dstdir = os.Args[5]
+		}
+		if len(os.Args) > 6 {
+			atomicReq.Wdir, _ = strconv.ParseBool(os.Args[6])
+		}
+		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "cmd.script":
 		if len(os.Args) < 5 {
 			log.Println("Params not enough,pls check!")

@@ -66,6 +66,10 @@ func (task *RcsTaskReqJson) Parse() (*RcsTaskReq, error) {
 		atomicReq = new(modules.File_md5sum_req)
 	case "file.ckmd5sum":
 		atomicReq = new(modules.File_ckmd5sum_req)
+	case "file.zip":
+		atomicReq = new(modules.File_zip_req)
+	case "file.unzip":
+		atomicReq = new(modules.File_unzip_req)
 	case "cmd.script":
 		atomicReq = new(modules.Cmd_script_req)
 	case "os.restart":
