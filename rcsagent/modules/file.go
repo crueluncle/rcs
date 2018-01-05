@@ -3,6 +3,7 @@ package modules
 import (
 	"archive/zip"
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -292,6 +293,64 @@ func (seb File_ckmd5sum_req) Handle(res *Atomicresponse) error {
 	return nil
 }
 func (seb File_zip_req) Handle(res *Atomicresponse) error {
+	//will not auto add '.zip' subfix to Zipfilepath
+	if seb.Zipfilepath == "" {
+		seb.Zipfilepath = filepath.Join(filepath.Dir(filepath.Clean(seb.Sfilepath)), strings.TrimSuffix(filepath.Base(seb.Sfilepath), filepath.Ext(seb.Sfilepath))) + `.zip`
+	}
+	zipfile, err := os.Create(seb.Zipfilepath)
+	if err != nil {
+		res.Result = err.Error()
+		return err
+	}
+	defer zipfile.Close()
+	zipfilewr := bufio.NewWriterSize(zipfile, 10*1024*1024)
+	zipwriter := zip.NewWriter(zipfilewr)
+	br := bufio.NewReader(bytes.NewReader(make([]byte, 10*1024*1024)))
+	wf := func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+		header.Name, err = filepath.Rel(filepath.Dir(seb.Sfilepath), path)
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			header.Method = 8
+			fd, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			br.Reset(fd)
+		}
+		w, err := zipwriter.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+		_, err = br.WriteTo(w)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	err = filepath.Walk(seb.Sfilepath, wf)
+	if err != nil {
+		res.Result = err.Error()
+		return err
+	}
+	if err := zipfilewr.Flush(); err != nil {
+		res.Result = err.Error()
+		return err
+	}
+	if err := zipwriter.Close(); err != nil {
+		res.Result = err.Error()
+		return err
+	}
+	res.Flag = true
+	res.Result = "success"
 	return nil
 }
 func (seb File_unzip_req) Handle(res *Atomicresponse) error {
@@ -307,12 +366,14 @@ func (seb File_unzip_req) Handle(res *Atomicresponse) error {
 
 	unzip_file, err := zip.OpenReader(seb.Zipfilepath)
 	if err != nil {
+		res.Result = err.Error()
 		return err
 	}
 	os.MkdirAll(dest, 0755)
 	for _, f := range unzip_file.File {
 		rc, err := f.Open()
 		if err != nil {
+			res.Result = err.Error()
 			return err
 		}
 		path := filepath.Join(dest, f.Name)
@@ -321,11 +382,13 @@ func (seb File_unzip_req) Handle(res *Atomicresponse) error {
 		} else {
 			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 			if err != nil {
+				res.Result = err.Error()
 				return err
 			}
 			_, err = io.Copy(f, rc)
 			if err != nil {
 				if err != io.EOF {
+					res.Result = err.Error()
 					return err
 				}
 			}
@@ -333,5 +396,7 @@ func (seb File_unzip_req) Handle(res *Atomicresponse) error {
 		}
 	}
 	unzip_file.Close()
+	res.Flag = true
+	res.Result = "success"
 	return nil
 }

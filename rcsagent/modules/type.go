@@ -44,8 +44,8 @@ type File_ckmd5sum_req struct { //similar to md5sum -c md5file file.ckmd5sum
 	Md5filepath string
 }
 type File_zip_req struct {
-	Sfilepath string // is a file or directory
-	Dstdir    string //if not specified,same as the Sfilepath`s dir
+	Sfilepath   string // is a file or directory
+	Zipfilepath string // like abc.zip  d:\aaa.zip
 }
 type File_unzip_req struct {
 	Zipfilepath string //specify the zip filepath
