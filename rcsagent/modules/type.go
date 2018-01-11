@@ -1,5 +1,27 @@
 package modules
 
+/*
+	"file.push"   -- File_push_req
+	"file.pull"   -- File_pull_req
+	"file.cp"     -- File_cp_req
+	"file.del"    -- File_del_req
+	"file.rename"    -- File_rename_req
+	"file.grep"   -- File_grep_req
+	"file.replace" --File_replace_req
+	"file.mreplace" --File_mreplace_req
+	"file.md5sum"   --File_md5sum_req
+	"file.ckmd5sum" --File_ckmd5sum_req
+	"file.zip"      --File_zip_req
+	"file.unzip"	--File_unzip_req
+	"cmd.run"       --Cmd_run_req
+	"cmd.script"    --Cmd_script_req
+	"os.restart"    --Os_restart_req
+	"os.shutdown"   -- Os_shutdown_req
+	"os.setpwd"     --Os_setpwd_req
+	"firewall.setrules"  --Firewall_set_req
+	"process.stop" --Process_stop_req
+	"rcs.ping" --Rcs_HeartBeat_Req
+*/
 //define all atomic request structs in here
 type File_push_req struct { //only support single file  'file.push'
 	Sfileurl, Sfilemd5 string
@@ -70,7 +92,10 @@ type File_untar_req struct {
 }
 
 //==============================================
-
+type Cmd_run_req struct { //cmd.run
+	Cmd     string
+	CmdArgs []string
+}
 type Cmd_script_req struct { //cmd.script
 	FileUrl    string
 	FileMd5    string
@@ -107,29 +132,6 @@ type Process_stop_req struct { //process.stop
 //==============================================
 type Rcs_ping_req struct { //rcs.ping
 }
-
-//==============================================
-/*
-	"file.push"   -- File_push_req
-	"file.pull"   -- File_pull_req
-	"file.cp"     -- File_cp_req
-	"file.del"    -- File_del_req
-	"file.rename"    -- File_rename_req
-	"file.grep"   -- File_grep_req
-	"file.replace" --File_replace_req
-	"file.mreplace" --File_mreplace_req
-	"file.md5sum"   --File_md5sum_req
-	"file.ckmd5sum" --File_ckmd5sum_req
-	"file.zip"      --File_zip_req
-	"file.unzip"	--File_unzip_req
-	"cmd.script"    --Cmd.script_req
-	"os.restart"    --Os_restart_req
-	"os.shutdown"   -- Os_shutdown_req
-	"os.setpwd"     --Os_setpwd_req
-	"firewall.setrules"  --Firewall_set_req
-	"process.stop" --Process_stop_req
-	"rcs.ping" --Rcs_HeartBeat_Req
-*/
 
 //==============================================
 type Atomicrequest interface { //indicate an atomic request

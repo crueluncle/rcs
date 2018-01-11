@@ -72,6 +72,8 @@ func (task *RcsTaskReqJson) Parse() (*RcsTaskReq, error) {
 		atomicReq = new(modules.File_unzip_req)
 	case "cmd.script":
 		atomicReq = new(modules.Cmd_script_req)
+	case "cmd.run":
+		atomicReq = new(modules.Cmd_run_req)
 	case "os.restart":
 		atomicReq = new(modules.Os_restart_req)
 	case "os.shutdown":

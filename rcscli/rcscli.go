@@ -1,10 +1,6 @@
 package main
 
-/* rcs command line tool
-rcs [-t|-tf] cmd.script /tmp/test.sh "a b c"
-rcs [-t|-tf] file.push  /tmp/test.txt "d:\a\b\c"
-rcs [-t|-tf] process.stop "1.exe,2.exe,3.exe" true
-*/
+//commandline tool
 import (
 	"encoding/json"
 	"flag"
@@ -57,7 +53,29 @@ func main() {
 	flag.Parse()
 
 	if len(os.Args) < 4 {
-		log.Fatalln("Params not enough,pls check:", `rcs [-t|-tf] targets op args `)
+		log.Fatalln("Usage: " + os.Args[0] + `[-t|-tf] <targets|targetsfile> <module.function>
+-----------------------------------------------------------------------------------------------------------------
+module.function belows:
+file.push          -- for push local file to remote targets
+file.pull          -- for pull remote file on targets to localhost
+file.cp            -- run 'copy' command on remote targets for copy file or directory
+file.del           -- run 'delete' command on remote targets for delete file or directory
+file.rename        -- run 'rename' command on remote targets for rename file or directory
+file.grep          -- run 'grep' command on remote targets for grep file content
+file.replace       -- run 'replace' command on remote targets for replace text file
+file.mreplace      -- run 'mreplace' command on remote targets for replace multiple text files
+file.md5sum        -- run 'md5sum' command on remote targets for compute file md5sum 
+file.ckmd5sum      -- run 'ckmd5sum' command on remote targets for check md5sum of files defined in md5sum file
+file.zip           -- run 'zip' command on remote targets for zip files or directory
+file.unzip         -- run 'unzip' command on remote targets for unzip zipdfile
+cmd.run            -- exec command on remote targets
+cmd.script         -- exec local scriptfile on remote targets,push to remote and run
+os.restart         -- restart remote targets
+os.shutdown        -- shutdown remote targets
+os.setpwd          -- set user password on remote targets
+firewall.setrules  -- set filewall rules on remote targets
+process.stop       -- stop the specified process on remote targets
+rcs.ping           -- for rcsping remote targets`)
 	}
 	if *t != "" && *tf != "" {
 		log.Fatalln("-t and -tf can not be both specified,pls check!")
@@ -83,8 +101,8 @@ func main() {
 	switch op {
 	case "file.push":
 		if len(os.Args) < 6 {
-			log.Println("Params not enough,pls check!")
-			log.Println(`rcs [-t|-tf] ` + op + ` LocalFileName RemoteDst`)
+			//log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <LocalFileName>  <RemoteDst>`)
 			return
 		}
 		err, postfile_rsp := cli.PostFile(os.Args[4], cli.Fileregistry)
@@ -103,8 +121,7 @@ func main() {
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "file.pull":
 		if len(os.Args) < 6 {
-			log.Println("Params not enough,pls check!")
-			log.Println(`rcs [-t|-tf] ` + op + ` RemoteFileName LocalDst`)
+			log.Println("Usage: " + op + ` <RemoteFileName>  <LocalDir>`)
 			return
 		}
 		atomicReq := new(modules.File_pull_req)
@@ -114,8 +131,7 @@ func main() {
 
 	case "file.cp":
 		if len(os.Args) < 6 {
-			log.Println("Params not enough,pls check!")
-			log.Println(`rcs [-t|-tf] ` + op + ` srcpath dstpath [true|false]`)
+			log.Println("Usage: " + op + ` <srcpath>  <dstpath> [true|false]`)
 			return
 		}
 		atomicReq := new(modules.File_cp_req)
@@ -128,8 +144,7 @@ func main() {
 
 	case "file.del":
 		if len(os.Args) < 5 {
-			log.Println("Params not enough,pls check!")
-			log.Println(`rcs [-t|-tf] ` + op + ` srcpath [true|false]`)
+			log.Println("Usage: " + op + ` <srcpath>  [true|false]`)
 			return
 		}
 		atomicReq := new(modules.File_del_req)
@@ -140,8 +155,7 @@ func main() {
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "file.rename":
 		if len(os.Args) < 6 {
-			log.Println("Params not enough,pls check!")
-			log.Println(`rcs [-t|-tf] ` + op + ` srcpath newname`)
+			log.Println("Usage: " + op + ` <srcpath>  <newname>`)
 			return
 		}
 		atomicReq := new(modules.File_rename_req)
@@ -150,7 +164,7 @@ func main() {
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "file.grep":
 		if len(os.Args) < 6 {
-			log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <srcfilepath>  <patternstr>`)
 			return
 		}
 		atomicReq := new(modules.File_grep_req)
@@ -160,7 +174,7 @@ func main() {
 
 	case "file.replace":
 		if len(os.Args) < 7 {
-			log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <srcfilepath>  <patternstr> <repltext>`)
 			return
 		}
 		atomicReq := new(modules.File_replace_req)
@@ -171,7 +185,7 @@ func main() {
 
 	case "file.mreplace":
 		if len(os.Args) < 8 {
-			log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <srcfilepath>  <filenamepatternstr> <patternstr> <repltext>`)
 			return
 		}
 		atomicReq := new(modules.File_mreplace_req)
@@ -183,7 +197,7 @@ func main() {
 
 	case "file.md5sum":
 		if len(os.Args) < 5 {
-			log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <filepath>`)
 			return
 		}
 		atomicReq := new(modules.File_md5sum_req)
@@ -192,7 +206,7 @@ func main() {
 
 	case "file.ckmd5sum":
 		if len(os.Args) < 5 {
-			log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <Md5filepath>`)
 			return
 		}
 		atomicReq := new(modules.File_ckmd5sum_req)
@@ -200,7 +214,7 @@ func main() {
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "file.zip":
 		if len(os.Args) < 5 {
-			log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <srcfilepath>  [Zipfilepath]`)
 			return
 		}
 		atomicReq := new(modules.File_zip_req)
@@ -211,7 +225,7 @@ func main() {
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "file.unzip":
 		if len(os.Args) < 5 {
-			log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <Zipfilepath>  [Dstdir]  [Wdir]`)
 			return
 		}
 		atomicReq := new(modules.File_unzip_req)
@@ -223,9 +237,20 @@ func main() {
 			atomicReq.Wdir, _ = strconv.ParseBool(os.Args[6])
 		}
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
+	case "cmd.run":
+		if len(os.Args) < 5 {
+			log.Println("Usage: " + op + ` <command>  [CmdArgs...]`)
+			return
+		}
+		atomicReq := new(modules.Cmd_run_req)
+		atomicReq.Cmd = os.Args[4]
+		if len(os.Args) > 5 {
+			atomicReq.CmdArgs = os.Args[5:]
+		}
+		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "cmd.script":
 		if len(os.Args) < 5 {
-			log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <scriptfilepath>  [ScriptArgs]`)
 			return
 		}
 		err, postfile_rsp := cli.PostFile(os.Args[4], cli.Fileregistry)
@@ -245,6 +270,7 @@ func main() {
 		}
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "os.restart":
+		//log.Println("Usage: " + op + ` [Delay]  [Delaysecond]`)
 		atomicReq := new(modules.Os_restart_req)
 		if len(os.Args) > 4 {
 			atomicReq.Delay, _ = strconv.ParseBool(os.Args[4])
@@ -254,6 +280,7 @@ func main() {
 		}
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "os.shutdown":
+		//log.Println("Usage: " + op + ` [Delay]  [Delaysecond]`)
 		atomicReq := new(modules.Os_shutdown_req)
 		if len(os.Args) > 4 {
 			atomicReq.Delay, _ = strconv.ParseBool(os.Args[4])
@@ -264,7 +291,7 @@ func main() {
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "os.setpwd":
 		if len(os.Args) < 6 {
-			log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <Username>  <Password>`)
 			return
 		}
 		atomicReq := new(modules.Os_setpwd_req)
@@ -273,7 +300,7 @@ func main() {
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "firewall.set":
 		if len(os.Args) < 6 {
-			log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <Rulename>  <disable|enable|del>`)
 			return
 		}
 		atomicReq := new(modules.Firewall_set_req)
@@ -282,7 +309,7 @@ func main() {
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "process.stop":
 		if len(os.Args) < 5 {
-			log.Println("Params not enough,pls check!")
+			log.Println("Usage: " + op + ` <Imagename>  [Doforce]`)
 			return
 		}
 		atomicReq := new(modules.Process_stop_req)

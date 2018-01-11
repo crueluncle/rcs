@@ -51,6 +51,7 @@ func init() {
 	gob.Register(&agentmod.File_zip_req{})
 	gob.Register(&agentmod.File_unzip_req{})
 	gob.Register(&agentmod.Cmd_script_req{})
+	gob.Register(&agentmod.Cmd_run_req{})
 	gob.Register(&agentmod.Os_restart_req{})
 	gob.Register(&agentmod.Os_shutdown_req{})
 	gob.Register(&agentmod.Os_setpwd_req{})

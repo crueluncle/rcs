@@ -9,6 +9,33 @@ import (
 	"strings"
 )
 
+func (seb Cmd_run_req) Handle(res *Atomicresponse) error {
+	//exec command on agent,donot support commands link like '|' '&' '>' etc..
+	var outstd, errstd bytes.Buffer
+	var resStderr string
+	var command = exec.Command(seb.Cmd, seb.CmdArgs...)
+
+	command.Stderr = &errstd //the stderr of the scripts
+	command.Stdout = &outstd //the stdout of the scripts
+	err := command.Run()
+	/*this 'err' just indicate the execution status of the last line of the \
+	scripts,not the status during the executing(maybe some errors occur during the executing),so we should judge the 'err' and the 'command.Stderr' content both
+	*/
+	if err != nil {
+		resStderr = err.Error() + errstd.String()
+	} else {
+		resStderr = errstd.String()
+	}
+	if resStderr == "" { //truely correctness, means 'command.Run()' is ok,and no error occur about the script itself
+		res.Flag = true
+		res.Result = outstd.String()
+	} else {
+		res.Flag = false
+		res.Result = resStderr
+	}
+	return nil
+}
+
 //impliments Atomicrequest interface
 func (seb Cmd_script_req) Handle(res *Atomicresponse) error {
 	/*
