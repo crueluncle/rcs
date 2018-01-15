@@ -31,13 +31,14 @@ var (
 
 )
 var logfile *os.File
-var redisClient *redis.Pool
+var redisClient1, redisClient2 *redis.Pool
 var taskList chan *utils.RcsTaskReq
 
 func init() {
 	gob.Register(utils.KeepaliveMsg{})
 	gob.Register(utils.RcsTaskResp{})
 	gob.Register(utils.RcsTaskReq{})
+	gob.Register(utils.AgentSyncMsg{})
 	gob.Register(&agentmod.File_push_req{})
 	gob.Register(&agentmod.File_pull_req{})
 	gob.Register(&agentmod.File_cp_req{})
@@ -60,6 +61,7 @@ func init() {
 	gob.Register(&agentmod.Rcs_ping_req{})
 	utils.MsgTypeRegist(&utils.RcsTaskResp{})
 	utils.MsgTypeRegist(&utils.KeepaliveMsg{})
+	utils.MsgTypeRegist(&utils.AgentSyncMsg{})
 	var errs error
 	if err := os.MkdirAll(`log`, 0666); err != nil {
 		log.Fatalln(err)
@@ -82,7 +84,6 @@ func init() {
 masterAddr         = 0.0.0.0:9525
 apiServer_addr     = 0.0.0.0:9527
 redisconstr = 127.0.0.1:6379
-redisDB     = 0
 redispass   = yourPassword
 rMaxIdle    = 100
 rMaxActive  = 20000`
@@ -96,7 +97,8 @@ rMaxActive  = 20000`
 	rMaxActive = cf.MustInt("BASE", "rMaxActive")
 
 	taskList = make(chan *utils.RcsTaskReq, 64)
-	redisClient, errs = utils.Newredisclient(redisconstr, redispass, redisDB, rMaxIdle, rMaxActive)
+	redisClient1, errs = utils.Newredisclient(redisconstr, redispass, 0, rMaxIdle, rMaxActive) //for write response msg
+	redisClient2, errs = utils.Newredisclient(redisconstr, redispass, 1, 10, 20)               //for write agentsync msg
 	if errs != nil {
 		log.Fatalln(errs)
 	}
@@ -110,7 +112,7 @@ func main() {
 	defer logfile.Close()
 	runtime.GOMAXPROCS(runtime.NumCPU() * 3)
 
-	var jobManagerSvr = modules.NewJobsvrManager(redisClient.Get, taskList)
+	var jobManagerSvr = modules.NewJobsvrManager(redisClient1.Get, redisClient2.Get, taskList)
 	var apiserver = modules.NewMasterapi(apiServer_addr, taskList)
 
 	go func() {

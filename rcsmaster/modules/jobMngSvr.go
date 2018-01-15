@@ -24,10 +24,10 @@ type jobsvrManager struct {
 	jobsvrCtn jContainer
 	msgchan   chan interface{}
 	tasklist  <-chan *utils.RcsTaskReq
-	f         func() redis.Conn
+	f1, f2    func() redis.Conn
 }
 
-func NewJobsvrManager(getredisconfunc func() redis.Conn, tasklistchan <-chan *utils.RcsTaskReq) *jobsvrManager {
+func NewJobsvrManager(getredisconfunc1, getredisconfunc2 func() redis.Conn, tasklistchan <-chan *utils.RcsTaskReq) *jobsvrManager {
 	jsm := new(jobsvrManager)
 	go func() {
 		for {
@@ -40,7 +40,8 @@ func NewJobsvrManager(getredisconfunc func() redis.Conn, tasklistchan <-chan *ut
 	jsm.jobsvrCtn = jContainer(make(map[string]*jobsvrEntry))
 	jsm.msgchan = make(chan interface{}, 32)
 	jsm.tasklist = tasklistchan
-	jsm.f = getredisconfunc
+	jsm.f1 = getredisconfunc1
+	jsm.f2 = getredisconfunc2
 	return jsm
 }
 func (jsm jobsvrManager) HandleConn(conn *net.TCPConn) error {
@@ -50,6 +51,7 @@ func (jsm jobsvrManager) HandleConn(conn *net.TCPConn) error {
 			os.Exit(1)
 		}
 	}()
+
 	connrwer := utils.NewCodecer(conn)
 	defer connrwer.Close()
 
@@ -62,7 +64,7 @@ func (jsm jobsvrManager) HandleConn(conn *net.TCPConn) error {
 	}
 	jsm.addjobsvr(ip, &jobsvrEntry{conn, connrwer})
 	go jsm.broadcastTask()
-	go jsm.saveResponse()
+	go jsm.saveResponse(ip)
 	err := connrwer.Read(jsm.msgchan)
 	jsm.deljobsvr(ip)
 	log.Println("Close the connection from jobsvr:", err, conn.LocalAddr(), "<----->", conn.RemoteAddr())
@@ -97,7 +99,7 @@ func (jsm *jobsvrManager) broadcastTask() error {
 	if len(jsm.jobsvrCtn) == 0 {
 		return errors.New("No jobsvr exist!")
 	}
-	for task := range jsm.tasklist {
+	for task := range jsm.tasklist { //广播模式,后续优化为路由模式
 		for ip, jsinfo := range jsm.jobsvrCtn {
 			if jsinfo == nil {
 				return errors.New("Have invalid jobsvr!")
@@ -113,14 +115,14 @@ func (jsm *jobsvrManager) broadcastTask() error {
 	}
 	return nil
 }
-func (jsm *jobsvrManager) saveResponse() {
+func (jsm *jobsvrManager) saveResponse(jobsvrip string) {
 
 	for msg := range jsm.msgchan {
 		if _, ok := msg.(*utils.KeepaliveMsg); ok { //结接收到心跳消息,什么也不干
 		} else if res, ok := msg.(*utils.RcsTaskResp); ok { //接收到响应消息
 			var i int
 			for i = 0; i < 3; i++ {
-				e := utils.Writeresponserun(res, jsm.f())
+				e := utils.Writeresponserun(res, jsm.f1())
 				if e == nil {
 					break
 				} else { //如果写失败,重试3次
@@ -135,6 +137,12 @@ func (jsm *jobsvrManager) saveResponse() {
 				continue //
 			}
 			log.Println("Got one response msg from jobsvr and put in db success!", res.Runid, res.AgentIP)
+		} else if res, ok := msg.(*utils.AgentSyncMsg); ok { //接收到agent同步信息
+			e := utils.WriteAgentinfo(jobsvrip, res, jsm.f2())
+			if e != nil {
+				log.Println("One Agentinfo Write2redis failed:", e, res.Op, res.Agentip)
+				continue
+			}
 		}
 	}
 

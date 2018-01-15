@@ -106,6 +106,11 @@ type KeepaliveMsg struct { //mater与jobsvr之间的探测消息
 	Id string
 	Sn int
 }
+type AgentSyncMsg struct { //sync to master
+	Op      string //'add' 'del'
+	Agentip string
+	Ostype  string
+}
 
 func (rs *MasterApiResp) EncodeJson(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")

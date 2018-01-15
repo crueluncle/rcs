@@ -35,6 +35,7 @@ var logfile *os.File
 
 var tasks chan interface{}
 var resps chan *utils.RcsTaskResp
+var agentsync chan *utils.AgentSyncMsg
 var nodeRouteMap *sync.Map
 
 func init() { //初始化操作
@@ -102,6 +103,7 @@ filecacheAddr      = 0.0.0.0:9530`
 
 	tasks = make(chan interface{}, taskLength)
 	resps = make(chan *utils.RcsTaskResp, taskLength)
+	agentsync = make(chan *utils.AgentSyncMsg, taskLength)
 	nodeRouteMap = new(sync.Map)
 }
 func main() {
@@ -115,9 +117,9 @@ func main() {
 	defer close(tasks)
 	defer close(resps)
 
-	myagentManager := modules.NewAgentMngSvr(agentCKT, routeId, nodeRouteMap)
+	myagentManager := modules.NewAgentMngSvr(agentCKT, agentsync)
 	myfileServer := modules.NewFileSvr(filecacheAddr, filecachedir)
-	mymasterMngSvr := modules.NewMasterManager(tasks, resps)
+	mymasterMngSvr := modules.NewMasterManager(tasks, resps, agentsync)
 	mytaskhandler := modules.NewTaskHandler(rpcTimeOut, filecachedir, filecacheAddr, tasks, resps, myagentManager.Getagent)
 	//	mySyncRmap := modules.NewRouteSynchronizer(nodeRouteMap)
 

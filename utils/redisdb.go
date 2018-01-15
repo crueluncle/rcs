@@ -119,3 +119,21 @@ func Writeresponserun(msg *RcsTaskResp, rc redis.Conn) error {
 	}
 	return nil
 }
+
+//////////////////////////////////////////
+func WriteAgentinfo(jsvip string, msg *AgentSyncMsg, rc redis.Conn) error {
+	defer rc.Close()
+
+	switch msg.Op {
+	case "add":
+		if _, e := redis.Int(rc.Do("sadd", jsvip, msg.Agentip)); e != nil {
+			return e
+		}
+	case "del":
+		if _, e := redis.Int(rc.Do("srem", jsvip, msg.Agentip)); e != nil {
+			return e
+		}
+	default:
+	}
+	return nil
+}

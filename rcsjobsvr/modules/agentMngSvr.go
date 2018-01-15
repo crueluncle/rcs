@@ -8,6 +8,8 @@ import (
 	"net/rpc"
 	"os"
 	"rcs/rcsagent/modules"
+	"rcs/utils"
+	"runtime"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -23,12 +25,11 @@ type acontainer map[string]*agentEntry
 type agentMngSvr struct {
 	ctnlock           *sync.RWMutex //protect 'agentCtn'
 	agentCtn          acontainer
-	nodeRouteMap      *sync.Map
 	keepAliveDuration int
-	routeId           uint16
+	syncchan          chan<- *utils.AgentSyncMsg
 }
 
-func NewAgentMngSvr(ackt int, routeId uint16, rm *sync.Map) *agentMngSvr {
+func NewAgentMngSvr(ackt int, ch chan<- *utils.AgentSyncMsg) *agentMngSvr {
 	am := new(agentMngSvr)
 	go func() {
 		for {
@@ -36,12 +37,10 @@ func NewAgentMngSvr(ackt int, routeId uint16, rm *sync.Map) *agentMngSvr {
 			time.Sleep(time.Minute)
 		}
 	}()
-
 	am.ctnlock = new(sync.RWMutex)
 	am.agentCtn = acontainer(make(map[string]*agentEntry))
-	am.nodeRouteMap = rm
 	am.keepAliveDuration = ackt
-	am.routeId = routeId
+	am.syncchan = ch
 	return am
 }
 func (am agentMngSvr) HandleConn(conn *net.TCPConn) error {
@@ -60,7 +59,9 @@ func (am agentMngSvr) HandleConn(conn *net.TCPConn) error {
 		return errors.New("Agent regist conflict, closing the connection!")
 	}
 	rcli := rpc.NewClient(conn)
+
 	ai := agentEntry{conn, rcli, new(sync.Mutex)}
+
 	am.addagent(ip, &ai)
 
 	resp := new(modules.Atomicresponse)
@@ -75,13 +76,15 @@ func (am agentMngSvr) HandleConn(conn *net.TCPConn) error {
 		time.Sleep(time.Second * time.Duration(1+rand.New(rand.NewSource(time.Now().UnixNano())).Intn(am.keepAliveDuration)))
 	}
 	am.delagent(ip)
+
 	return err
 }
 func (am *agentMngSvr) addagent(key string, val *agentEntry) {
 	am.ctnlock.Lock()
 	am.agentCtn[key] = val
+
 	am.ctnlock.Unlock()
-	am.nodeRouteMap.Store(key, am.routeId)
+	am.syncchan <- &utils.AgentSyncMsg{"add", key, runtime.GOOS} //sync to master
 }
 func (am *agentMngSvr) delagent(key string) {
 	ai := am.Getagent(key)
@@ -98,7 +101,8 @@ func (am *agentMngSvr) delagent(key string) {
 
 	}
 	am.ctnlock.Unlock()
-	am.nodeRouteMap.Delete(key)
+	am.syncchan <- &utils.AgentSyncMsg{"del", key, ""} //sync to master
+
 }
 func (am *agentMngSvr) Getagent(key string) *agentEntry {
 	am.ctnlock.RLock()

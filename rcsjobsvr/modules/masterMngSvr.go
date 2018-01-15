@@ -11,15 +11,17 @@ import (
 )
 
 type masterMngSvr struct {
-	tasks chan<- interface{}
-	resps <-chan *utils.RcsTaskResp
-	cdr   utils.Codecer
+	tasks    chan<- interface{}
+	resps    <-chan *utils.RcsTaskResp
+	syncchan <-chan *utils.AgentSyncMsg
+	cdr      utils.Codecer
 }
 
-func NewMasterManager(tchan chan<- interface{}, respchan <-chan *utils.RcsTaskResp) *masterMngSvr {
+func NewMasterManager(tchan chan<- interface{}, respchan <-chan *utils.RcsTaskResp, syncch <-chan *utils.AgentSyncMsg) *masterMngSvr {
 	return &masterMngSvr{
-		tasks: tchan,
-		resps: respchan,
+		tasks:    tchan,
+		resps:    respchan,
+		syncchan: syncch,
 	}
 }
 
@@ -34,6 +36,7 @@ func (mm masterMngSvr) HandleConn(conn *net.TCPConn) error {
 	mm.cdr = decoder
 	go mm.keepalive()
 	go mm.sendResp()
+	go mm.syncagent()
 	if decoder != nil { //读出task放到tasks
 		err := decoder.Read(mm.tasks)
 		if err != nil {
@@ -66,6 +69,17 @@ func (mm masterMngSvr) sendResp() {
 			break
 		}
 		log.Println("Send taskresponse to master done:", r.Runid)
+	}
+	_ = mm.cdr.Close()
+}
+func (mm masterMngSvr) syncagent() {
+	for r := range mm.syncchan {
+		err := mm.cdr.Write(r)
+		if err != nil {
+			log.Println(err)
+			break
+		}
+		log.Println("Send agentinfo to master done:", r.Agentip)
 	}
 	_ = mm.cdr.Close()
 }
