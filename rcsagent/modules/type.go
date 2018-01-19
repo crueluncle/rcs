@@ -100,6 +100,7 @@ type Cmd_script_req struct { //cmd.script
 	FileUrl    string
 	FileMd5    string
 	ScriptArgs []string
+	Stype      string // bat,shell,py,pws,perl
 }
 
 //==============================================

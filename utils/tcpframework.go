@@ -148,6 +148,8 @@ recon:
 		}
 	}
 	log.Println("Client connect ok to:", conn.RemoteAddr())
+	conn.SetKeepAlive(true)
+	conn.SetKeepAlivePeriod(time.Second * 30)
 	e := tc.HandleConn(conn)
 	log.Println("Client connection terminated to:", conn.RemoteAddr(), e)
 	if tc.reconnectAfterTerminal {

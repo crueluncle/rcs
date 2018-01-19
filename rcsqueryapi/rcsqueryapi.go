@@ -43,7 +43,7 @@ func init() {
 		log.Fatal(errs)
 	}
 	//log.SetOutput(logfile)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
+	//log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
 	log.SetOutput(io.MultiWriter(logfile, os.Stdout))
 	log.Println("Version:", utils.Version, " BuildTime:", utils.BuildTime, " Author:", utils.Author)
 	defcfg := `;section Base defines some params,'SectionName' in []  must be uniq globally.

@@ -58,7 +58,19 @@ func (seb Cmd_script_req) Handle(res *Atomicresponse) error {
 	}
 	uri := u.RequestURI()
 	scriptfilepath := filepath.Join(tmpfiledir, filepath.Base(strings.Split(uri, `?`)[0]))
-	command := exec.Command(scriptfilepath, seb.ScriptArgs...)
+	var command *exec.Cmd
+	switch seb.Stype {
+	//case "bat":
+	//case "shell":
+	case `shell=py`:
+		args := []string{scriptfilepath}
+		command = exec.Command("python", append(args, seb.ScriptArgs...)...)
+	case `shell=pws`:
+	case `shell=perl`:
+	default:
+		command = exec.Command(scriptfilepath, seb.ScriptArgs...)
+	}
+
 	var outstd, errstd bytes.Buffer
 	var resStderr string
 	command.Stderr = &errstd //the stderr of the scripts

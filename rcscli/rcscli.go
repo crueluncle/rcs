@@ -28,7 +28,19 @@ func init() {
 	if err := os.MkdirAll(`cfg`, 0666); err != nil {
 		log.Fatalln(err)
 	}
-	logfile, errs = os.OpenFile("log/rcscli.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0777)
+	logfile, errs = os.OpenFile("log/rcscli.log", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
+	if errs != nil {
+		log.Fatal(errs)
+	}
+	cli.Success, errs = os.OpenFile("success.ip", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
+	if errs != nil {
+		log.Fatal(errs)
+	}
+	cli.Fail, errs = os.OpenFile("fail.ip", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
+	if errs != nil {
+		log.Fatal(errs)
+	}
+	cli.Timeout, errs = os.OpenFile("timeout.ip", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
 	if errs != nil {
 		log.Fatal(errs)
 	}
@@ -36,6 +48,26 @@ func init() {
 	//log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
 	//log.Println("Version:", utils.Version, " BuildTime:", utils.BuildTime, " Author:", utils.Author)
 	log.SetOutput(io.MultiWriter(logfile, os.Stdout))
+	defcfg := `;section Base defines some params,'SectionName' in []  must be uniq globally.
+[BASE]
+SApiUrl                    = http://127.0.0.1:9527/runtask
+GettasksfnumsApiUrl        = http://127.0.0.1:9528/gettasksfnums
+GettaskresultAPiUrl        = http://127.0.0.1:9528/gettaskresult
+getagentresultApiUrl       = http://127.0.0.1:9528/getAgentResult
+getagentresultinsuccApiUrl = http://127.0.0.1:9528/getagentresultinsucc
+getagentresultinfailApiUrl = http://127.0.0.1:9528/getagentresultinfail
+TaskHandleTimeout          = 600                           
+Fileregistry               = http://127.0.0.1:8096/upload`
+
+	cf := utils.HandleConfigFile("cfg/rcscli.ini", defcfg)
+	cli.SApiUrl = cf.MustValue("BASE", "SApiUrl")
+	cli.GettasksfnumsApiUrl = cf.MustValue("BASE", "GettasksfnumsApiUrl")
+	cli.GettaskresultAPiUrl = cf.MustValue("BASE", "GettaskresultAPiUrl")
+	cli.GetagentresultApiUrl = cf.MustValue("BASE", "getagentresultApiUrl")
+	cli.GetagentresultinsuccApiUrl = cf.MustValue("BASE", "getagentresultinsuccApiUrl")
+	cli.GetagentresultinfailApiUrl = cf.MustValue("BASE", "getagentresultinfailApiUrl")
+	cli.TaskHandleTimeout = cf.MustInt("BASE", "TaskHandleTimeout")
+	cli.Fileregistry = cf.MustValue("BASE", "Fileregistry")
 }
 func main() {
 	defer func() {
@@ -45,6 +77,9 @@ func main() {
 		}
 	}()
 	defer logfile.Close()
+	defer cli.Success.Close()
+	defer cli.Fail.Close()
+	defer cli.Timeout.Close()
 	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
 	start := time.Now()
 	//----------------------
@@ -250,7 +285,7 @@ rcs.ping           -- for rcsping remote targets`)
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "cmd.script":
 		if len(os.Args) < 5 {
-			log.Println("Usage: " + op + ` <scriptfilepath>  [ScriptArgs]`)
+			log.Println("Usage: " + op + ` <scriptfilepath>  [ScriptArgs] [shell=Stype]`)
 			return
 		}
 		err, postfile_rsp := cli.PostFile(os.Args[4], cli.Fileregistry)
@@ -265,8 +300,16 @@ rcs.ping           -- for rcsping remote targets`)
 		atomicReq := new(modules.Cmd_script_req)
 		atomicReq.FileUrl = postfile_rsp.Url
 		atomicReq.FileMd5 = postfile_rsp.Md5str
-		if len(os.Args) > 5 {
+		if len(os.Args) == 6 {
+			if strings.HasPrefix(os.Args[5], `shell=`) {
+				atomicReq.Stype = os.Args[5]
+			} else {
+				atomicReq.ScriptArgs = strings.Split(os.Args[5], " ")
+			}
+		}
+		if len(os.Args) > 6 {
 			atomicReq.ScriptArgs = strings.Split(os.Args[5], " ")
+			atomicReq.Stype = os.Args[6]
 		}
 		rr.AtomicReq, _ = json.Marshal(atomicReq)
 	case "os.restart":

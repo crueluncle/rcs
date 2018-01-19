@@ -25,16 +25,17 @@ import (
 	//"github.com/qiniu/iconv"
 )
 
-const (
-	SApiUrl                    = `http://127.0.0.1:9527/runtask`
-	GettasksfnumsApiUrl        = `http://127.0.0.1:9528/gettasksfnums`
-	GettaskresultAPiUrl        = `http://127.0.0.1:9528/gettaskresult`
-	getagentresultApiUrl       = `http://127.0.0.1:9528/getAgentResult`
-	getagentresultinsuccApiUrl = `http://127.0.0.1:9528/getagentresultinsucc`
-	getagentresultinfailApiUrl = `http://127.0.0.1:9528/getagentresultinfail`
-	TaskHandleTimeout          = 600                            //一个任务task执行默认超时时间
-	Fileregistry               = `http://127.0.0.1:8096/upload` //文件仓库上传地址
+var (
+	SApiUrl,
+	GettasksfnumsApiUrl,
+	GettaskresultAPiUrl,
+	GetagentresultApiUrl,
+	GetagentresultinsuccApiUrl,
+	GetagentresultinfailApiUrl,
+	Fileregistry string //文件仓库上传地址
+	TaskHandleTimeout = 600 //一个任务task执行默认超时时间
 )
+var Success, Fail, Timeout *os.File
 
 type FileInfo struct { //api返回给调用者的消息
 	Url, Md5str string
@@ -117,15 +118,16 @@ func GetAgentResult(uid, ip string, wg *sync.WaitGroup, suc, fad *int32) {
 	vv = new(utils.GetAgentResultFromRedisResp)
 	for i = 0; i < TaskHandleTimeout*10; i++ {
 		time.Sleep(time.Second / 10)
-		if er := queryAgentresultByapi(getagentresultinsuccApiUrl, uid, ip, resp, e, vv, suc, fad); er == nil {
+		if er := queryAgentresultByapi(GetagentresultinsuccApiUrl, uid, ip, resp, e, vv, suc, fad); er == nil {
 			break
 		}
-		if er := queryAgentresultByapi(getagentresultinfailApiUrl, uid, ip, resp, e, vv, suc, fad); er == nil {
+		if er := queryAgentresultByapi(GetagentresultinfailApiUrl, uid, ip, resp, e, vv, suc, fad); er == nil {
 			break
 		}
 	}
 	if i == TaskHandleTimeout*10 {
 		log.Print(colorize("["+ip+"]", "yell")+"\n", "Time out"+"\n")
+		Timeout.WriteString(ip + "\n")
 	}
 
 }
@@ -152,12 +154,14 @@ func queryAgentresultByapi(apiurl, uid, ip string, resp *http.Response, e error,
 		return errors.New(vv.ErrStatus)
 	}
 	switch apiurl {
-	case getagentresultinsuccApiUrl:
+	case GetagentresultinsuccApiUrl:
 		atomic.AddInt32(suc, 1)
 		log.Print(colorize("["+ip+"]", "blue")+"\n", vv.Res+"\n")
-	case getagentresultinfailApiUrl:
+		Success.WriteString(ip + "\n")
+	case GetagentresultinfailApiUrl:
 		atomic.AddInt32(fad, 1)
 		log.Print(colorize("["+ip+"]", "red")+"\n", vv.Res+"\n")
+		Fail.WriteString(ip + "\n")
 	}
 	return nil
 

@@ -24,10 +24,14 @@ var (
 	masterAddr,
 	apiServer_addr,
 	redisconstr,
-	redispass string
-	redisDB, //redis DB
-	rMaxIdle, //redis连接池最大空闲连接
-	rMaxActive int //redis连接池最大连接数
+	syncredisconstr,
+	redispass, syncredispass string
+	redisDB,
+	syncredisDB, //redis DB
+	rMaxIdle,
+	syncrMaxIdle, //redis连接池最大空闲连接
+	rMaxActive,
+	syncrMaxActive int //redis连接池最大连接数
 
 )
 var logfile *os.File
@@ -74,7 +78,7 @@ func init() {
 		log.Fatal(errs)
 	}
 	//log.SetOutput(logfile)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
+	//	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
 	log.SetOutput(io.MultiWriter(logfile, os.Stdout))
 	//log.SetOutput(logfile)
 
@@ -83,22 +87,36 @@ func init() {
 [BASE]
 masterAddr         = 0.0.0.0:9525
 apiServer_addr     = 0.0.0.0:9527
+[RespRedis]
 redisconstr = 127.0.0.1:6379
+redisDB = 0
 redispass   = yourPassword
 rMaxIdle    = 100
-rMaxActive  = 20000`
+rMaxActive  = 20000
+[SyncRedis]
+redisconstr = 127.0.0.1:6379
+redisDB = 1
+redispass   = yourPassword
+rMaxIdle    = 100
+rMaxActive  = 1000`
 	cf := utils.HandleConfigFile("cfg/rcsmaster.ini", defcfg)
 	masterAddr = cf.MustValue("BASE", "masterAddr")
 	apiServer_addr = cf.MustValue("BASE", "apiServer_addr")
-	redisconstr = cf.MustValue("BASE", "redisconstr")
-	redisDB = cf.MustInt("BASE", "redisDB")
-	redispass = cf.MustValue("BASE", "redispass")
-	rMaxIdle = cf.MustInt("BASE", "rMaxIdle")
-	rMaxActive = cf.MustInt("BASE", "rMaxActive")
+	redisconstr = cf.MustValue("RespRedis", "redisconstr")
+	redisDB = cf.MustInt("RespRedis", "redisDB")
+	redispass = cf.MustValue("RespRedis", "redispass")
+	rMaxIdle = cf.MustInt("RespRedis", "rMaxIdle")
+	rMaxActive = cf.MustInt("RespRedis", "rMaxActive")
+
+	syncredisconstr = cf.MustValue("SyncRedis", "redisconstr")
+	syncredisDB = cf.MustInt("SyncRedis", "redisDB")
+	syncredispass = cf.MustValue("SyncRedis", "redispass")
+	syncrMaxIdle = cf.MustInt("SyncRedis", "rMaxIdle")
+	syncrMaxActive = cf.MustInt("SyncRedis", "rMaxActive")
 
 	taskList = make(chan *utils.RcsTaskReq, 64)
-	redisClient1, errs = utils.Newredisclient(redisconstr, redispass, 0, rMaxIdle, rMaxActive) //for write response msg
-	redisClient2, errs = utils.Newredisclient(redisconstr, redispass, 1, 10, 20)               //for write agentsync msg
+	redisClient1, errs = utils.Newredisclient(redisconstr, redispass, redisDB, rMaxIdle, rMaxActive)                     //for write response msg
+	redisClient2, errs = utils.Newredisclient(syncredisconstr, syncredispass, syncredisDB, syncrMaxIdle, syncrMaxActive) //for write agentsync msg
 	if errs != nil {
 		log.Fatalln(errs)
 	}

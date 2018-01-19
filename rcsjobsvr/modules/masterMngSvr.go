@@ -79,7 +79,7 @@ func (mm masterMngSvr) syncagent() {
 			log.Println(err)
 			break
 		}
-		log.Println("Send agentinfo to master done:", r.Agentip)
+		log.Println("Sync agentinfo to master done:", r.Agentip)
 	}
 	_ = mm.cdr.Close()
 }

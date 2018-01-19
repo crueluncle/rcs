@@ -59,7 +59,7 @@ func init() {
 	if errs != nil {
 		log.Fatal(errs)
 	}
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
+	//log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
 	//log.SetOutput(logfile)
 	log.SetOutput(io.MultiWriter(os.Stdout, logfile))
 	log.Println("Version:", utils.Version, " BuildTime:", utils.BuildTime, " Author:", utils.Author)

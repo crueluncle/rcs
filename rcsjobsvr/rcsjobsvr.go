@@ -73,7 +73,7 @@ func init() { //初始化操作
 		log.Fatal(err)
 	}
 	//log.SetOutput(logfile)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
+	//log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
 	log.SetOutput(io.MultiWriter(logfile, os.Stdout))
 	//log.SetOutput(logfile)
 	log.Println("Version:", utils.Version, " BuildTime:", utils.BuildTime, " Author:", utils.Author)
@@ -82,8 +82,8 @@ func init() { //初始化操作
 [BASE]
 routeId			   = 10000
 rpcTimeOut         = 3600
-agentCKT           = 10
-masterCKT          = 10
+agentCKT           = 30
+masterCKT          = 30
 taskLength         = 1280
 jobsvrAddr         = 0.0.0.0:9529
 masterAddr         = 127.0.0.1:9525
