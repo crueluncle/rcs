@@ -20,8 +20,13 @@ import (
 
 var logfile *os.File
 var errs error
+var successipfilename, failipfilename, timeoutipfilename string
 
 func init() {
+	tm := strconv.FormatInt(time.Now().Unix(), 10)
+	successipfilename = `success.ip_` + tm
+	failipfilename = `fail.ip_` + tm
+	timeoutipfilename = `timeout.ip_` + tm
 	if err := os.MkdirAll(`log`, 0666); err != nil {
 		log.Fatalln(err)
 	}
@@ -32,15 +37,15 @@ func init() {
 	if errs != nil {
 		log.Fatal(errs)
 	}
-	cli.Success, errs = os.OpenFile("success.ip", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
+	cli.Success, errs = os.OpenFile(successipfilename, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
 	if errs != nil {
 		log.Fatal(errs)
 	}
-	cli.Fail, errs = os.OpenFile("fail.ip", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
+	cli.Fail, errs = os.OpenFile(failipfilename, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
 	if errs != nil {
 		log.Fatal(errs)
 	}
-	cli.Timeout, errs = os.OpenFile("timeout.ip", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
+	cli.Timeout, errs = os.OpenFile(timeoutipfilename, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
 	if errs != nil {
 		log.Fatal(errs)
 	}
