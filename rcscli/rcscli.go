@@ -24,9 +24,9 @@ var successipfilename, failipfilename, timeoutipfilename string
 
 func init() {
 	tm := strconv.FormatInt(time.Now().Unix(), 10)
-	successipfilename = `success.ip_` + tm
-	failipfilename = `fail.ip_` + tm
-	timeoutipfilename = `timeout.ip_` + tm
+	successipfilename = `result/success.ip_` + tm
+	failipfilename = `result/fail.ip_` + tm
+	timeoutipfilename = `result/timeout.ip_` + tm
 	if err := os.MkdirAll(`log`, 0666); err != nil {
 		log.Fatalln(err)
 	}

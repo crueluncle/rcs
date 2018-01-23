@@ -91,7 +91,7 @@ func init() {
 	defcfg := `;section Base defines some params,'SectionName' in []  must be uniq globally.
 	[BASE]
 	rconT             = 10
-	jobsvrAddr        = 120.92.94.165:9529`
+	jobsvrAddr        = 47.52.33.157:9529`
 	cf := utils.HandleConfigFile(inifilename, defcfg)
 	RconT = cf.MustInt("BASE", "rconT")
 	JobsvrAddr = cf.MustValue("BASE", "jobsvrAddr")

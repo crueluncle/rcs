@@ -82,7 +82,7 @@ func init() {
 	}
 	logfilename := filepath.Join(path, `log/rcsagent.log`)
 	logf, _ = os.OpenFile(logfilename, syscall.O_CREAT|syscall.O_RDWR|syscall.O_APPEND, 0777)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
+	//log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
 	log.SetOutput(logf)
 	log.SetOutput(io.MultiWriter(logf, os.Stdout))
 	log.Println("Version:", utils.Version, " BuildTime:", utils.BuildTime, " Author:", utils.Author)
@@ -91,7 +91,7 @@ func init() {
 	defcfg := `;section Base defines some params,'SectionName' in []  must be uniq globally.
 	[BASE]
 	rconT             = 10
-	jobsvrAddr        = 127.0.0.1:9529`
+	jobsvrAddr        = 120.92.94.165:9529`
 	cf := utils.HandleConfigFile(inifilename, defcfg)
 	RconT = cf.MustInt("BASE", "rconT")
 	JobsvrAddr = cf.MustValue("BASE", "jobsvrAddr")
