@@ -1,0 +1,55 @@
+package modules
+
+import (
+	"log"
+	"net"
+	"os"
+	"runtime/debug"
+	"sync"
+	"webtestp/rek"
+)
+
+type routeEntry struct {
+	routeId uint16
+	agents  []string
+}
+type routeSynchronizer struct { //路由同步器
+	nodeRouteMap *sync.Map
+	encoder      rek.Codecer
+	re           *routeEntry
+}
+
+func NewRouteSynchronizer(rm *sync.Map) routeSynchronizer {
+	return routeSynchronizer{
+		nodeRouteMap: rm,
+		re:           new(routeEntry),
+	}
+}
+func (srm routeSynchronizer) HandleConn(conn *net.TCPConn) error {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("Panic info is: ", err, string(debug.Stack()))
+			os.Exit(1)
+		}
+	}()
+	srm.encoder = rek.NewCodecer(conn)
+	srm.nodeRouteMap.Range(srm.sendRouteEntry)
+	return nil
+
+}
+func (srm routeSynchronizer) sendRouteEntry(key interface{}, val interface{}) bool {
+	var ip string
+	var id uint16
+	var ok bool
+	if ip, ok = key.(string); ok == false {
+		return ok
+	}
+	if id, ok = val.(uint16); ok == false {
+		return ok
+	}
+	srm.re = &routeEntry{ip, id}
+	if e := srm.encoder.Write(srm.re); e != nil {
+		return false
+	}
+	return true
+}
