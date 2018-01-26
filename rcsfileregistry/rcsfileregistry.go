@@ -68,8 +68,8 @@ func init() {
 	//处理配置文件
 	defcfg := `;section Base defines some params,'SectionName' in []  must be uniq globally.
 [BASE]
-upaddr             = 0.0.0.0:8096
-downaddr        = 127.0.0.1:8098`
+upaddr             = 127.0.0.1:8096
+downaddr        = 0.0.0.0:8098`
 	cf := utils.HandleConfigFile("cfg/rcsfileregistry.ini", defcfg)
 	upaddr = cf.MustValue("BASE", "upaddr")
 	downaddr = cf.MustValue("BASE", "downaddr")

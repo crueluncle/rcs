@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"rcs/rcsagent/modules"
 	cli "rcs/rcscli/utils"
 	"rcs/utils"
@@ -18,26 +19,25 @@ import (
 	"time"
 )
 
-var logfile *os.File
-var errs error
-var successipfilename, failipfilename, timeoutipfilename string
+var (
+	logfile, cfgfile                                     *os.File
+	errs                                                 error
+	successipfilename, failipfilename, timeoutipfilename string
+)
 
 func init() {
 	tm := strconv.FormatInt(time.Now().Unix(), 10)
-
-	if err := os.MkdirAll(`result`, 0666); err != nil {
-		log.Fatalln(err)
+	confilename := "cfg/rcscli.ini"
+	logfilename := "log/rcscli.log"
+	successipfilename := `result/success.ip_` + tm
+	failipfilename := `result/fail.ip_` + tm
+	timeoutipfilename := `result/timeout.ip_` + tm
+	for _, file := range []string{confilename, logfilename, successipfilename, failipfilename, timeoutipfilename} {
+		if errs = os.MkdirAll(filepath.Dir(file), 0666); errs != nil {
+			log.Fatalln(errs)
+		}
 	}
-	if err := os.MkdirAll(`log`, 0666); err != nil {
-		log.Fatalln(err)
-	}
-	if err := os.MkdirAll(`cfg`, 0666); err != nil {
-		log.Fatalln(err)
-	}
-	successipfilename = `result/success.ip_` + tm
-	failipfilename = `result/fail.ip_` + tm
-	timeoutipfilename = `result/timeout.ip_` + tm
-	logfile, errs = os.OpenFile("log/rcscli.log", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
+	logfile, errs = os.OpenFile(logfilename, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
 	if errs != nil {
 		log.Fatal(errs)
 	}
@@ -68,7 +68,7 @@ getagentresultinfailApiUrl = http://127.0.0.1:9528/getagentresultinfail
 TaskHandleTimeout          = 600                           
 Fileregistry               = http://127.0.0.1:8096/upload`
 
-	cf := utils.HandleConfigFile("cfg/rcscli.ini", defcfg)
+	cf := utils.HandleConfigFile(confilename, defcfg)
 	cli.SApiUrl = cf.MustValue("BASE", "SApiUrl")
 	cli.GettasksfnumsApiUrl = cf.MustValue("BASE", "GettasksfnumsApiUrl")
 	cli.GettaskresultAPiUrl = cf.MustValue("BASE", "GettaskresultAPiUrl")
