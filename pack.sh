@@ -23,4 +23,5 @@ mv  rcsmaster/rcsmaster rcs_release/rcsmaster/
 mv  rcsqueryapi/rcsqueryapi rcs_release/rcsqueryapi/
 
 tar -zcf  rcs_release.tgz rcs_release	
-rm -rf rcs_release
+rm -rf  rcs_release
+mv -f rcs_release.tgz /root/
