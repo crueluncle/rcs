@@ -118,7 +118,7 @@ func (jsm *jobsvrManager) broadcastTask() error {
 func (jsm *jobsvrManager) saveResponse(jobsvrip string) {
 
 	for msg := range jsm.msgchan {
-		if _, ok := msg.(*utils.KeepaliveMsg); ok { //结接收到心跳消息,什么也不干
+		if _, ok := msg.(*utils.KeepaliveMsg); ok { //结接收到心跳消息
 		} else if res, ok := msg.(*utils.RcsTaskResp); ok { //接收到响应消息
 			var i int
 			for i = 0; i < 3; i++ {
