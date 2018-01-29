@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"strconv"
 	"time"
@@ -136,4 +137,28 @@ func WriteAgentinfo(jsvip string, msg *AgentSyncMsg, rc redis.Conn) error {
 	default:
 	}
 	return nil
+}
+func WriteTaskinfo(msg *RcsTaskReqJson, rc redis.Conn) error {
+	defer rc.Close()
+	taskdata, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	if _, e := redis.Int(rc.Do("lpush", "rcstasks", string(taskdata))); e != nil {
+		return e
+	}
+	return nil
+}
+func GetTaskinfo(rc redis.Conn) (*RcsTaskReqJson, error) {
+	defer rc.Close()
+	taskjson := new(RcsTaskReqJson)
+	taskdata, e := redis.Bytes(rc.Do("rpop", "rcstasks"))
+	if e != nil {
+		return nil, e
+	}
+	err := json.Unmarshal(taskdata, taskjson)
+	if err != nil {
+		return nil, err
+	}
+	return taskjson, nil
 }

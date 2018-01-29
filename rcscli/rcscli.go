@@ -146,7 +146,7 @@ rcs.ping           -- for rcsping remote targets`)
 	case "file.push":
 		if len(os.Args) < 6 {
 			//log.Println("Params not enough,pls check!")
-			log.Println("Usage: " + op + ` <LocalFileName>  <RemoteDst>`)
+			log.Println("Usage: " + op + ` <LocalFileName>  <RemoteDstDir>`)
 			return
 		}
 		err, postfile_rsp := cli.PostFile(os.Args[4], cli.Fileregistry)

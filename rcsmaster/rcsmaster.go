@@ -16,6 +16,7 @@ import (
 	"rcs/utils"
 	"runtime"
 	"runtime/debug"
+	"time"
 
 	"github.com/garyburd/redigo/redis"
 )
@@ -25,17 +26,21 @@ var (
 	apiServer_addr,
 	redisconstr,
 	syncredisconstr,
-	redispass, syncredispass string
+	taskredisconstr,
+	redispass, syncredispass, taskredispass string
 	redisDB,
 	syncredisDB, //redis DB
+	taskredisDB,
 	rMaxIdle,
 	syncrMaxIdle, //redis连接池最大空闲连接
+	taskrMaxIdle,
 	rMaxActive,
-	syncrMaxActive int //redis连接池最大连接数
+	syncrMaxActive,
+	taskrMaxActive int //redis连接池最大连接数
 
 )
 var logfile *os.File
-var redisClient1, redisClient2 *redis.Pool
+var redisClient1, redisClient2, redisClient3 *redis.Pool
 var taskList chan *utils.RcsTaskReq
 
 func init() {
@@ -86,7 +91,6 @@ func init() {
 	defcfg := `;section Base defines some params,'SectionName' in []  must be uniq globally.
 [BASE]
 masterAddr         = 0.0.0.0:9525
-apiServer_addr     = 0.0.0.0:9527
 [RespRedis]
 redisconstr = 127.0.0.1:6379
 redisDB = 0
@@ -98,10 +102,16 @@ redisconstr = 127.0.0.1:6379
 redisDB = 1
 redispass   = yourPassword
 rMaxIdle    = 100
-rMaxActive  = 1000`
+rMaxActive  = 1000
+[TaskRedis]
+redisconstr = 127.0.0.1:6379
+redisDB = 1
+redispass   = yourPassword
+rMaxIdle    = 10
+rMaxActive  = 100`
 	cf := utils.HandleConfigFile("cfg/rcsmaster.ini", defcfg)
 	masterAddr = cf.MustValue("BASE", "masterAddr")
-	apiServer_addr = cf.MustValue("BASE", "apiServer_addr")
+
 	redisconstr = cf.MustValue("RespRedis", "redisconstr")
 	redisDB = cf.MustInt("RespRedis", "redisDB")
 	redispass = cf.MustValue("RespRedis", "redispass")
@@ -114,9 +124,22 @@ rMaxActive  = 1000`
 	syncrMaxIdle = cf.MustInt("SyncRedis", "rMaxIdle")
 	syncrMaxActive = cf.MustInt("SyncRedis", "rMaxActive")
 
+	taskredisconstr = cf.MustValue("TaskRedis", "redisconstr")
+	taskredisDB = cf.MustInt("TaskRedis", "redisDB")
+	taskredispass = cf.MustValue("TaskRedis", "redispass")
+	taskrMaxIdle = cf.MustInt("TaskRedis", "rMaxIdle")
+	taskrMaxActive = cf.MustInt("TaskRedis", "rMaxActive")
+
 	taskList = make(chan *utils.RcsTaskReq, 64)
-	redisClient1, errs = utils.Newredisclient(redisconstr, redispass, redisDB, rMaxIdle, rMaxActive)                     //for write response msg
+	redisClient1, errs = utils.Newredisclient(redisconstr, redispass, redisDB, rMaxIdle, rMaxActive) //for write response msg
+	if errs != nil {
+		log.Fatalln(errs)
+	}
 	redisClient2, errs = utils.Newredisclient(syncredisconstr, syncredispass, syncredisDB, syncrMaxIdle, syncrMaxActive) //for write agentsync msg
+	if errs != nil {
+		log.Fatalln(errs)
+	}
+	redisClient3, errs = utils.Newredisclient(taskredisconstr, taskredispass, taskredisDB, taskrMaxIdle, taskrMaxActive) //for read task data
 	if errs != nil {
 		log.Fatalln(errs)
 	}
@@ -128,17 +151,31 @@ func main() {
 		}
 	}()
 	defer logfile.Close()
-	runtime.GOMAXPROCS(runtime.NumCPU() * 3)
-
+	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
+	go Gettask()
 	var jobManagerSvr = modules.NewJobsvrManager(redisClient1.Get, redisClient2.Get, taskList)
-	var apiserver = modules.NewMasterapi(apiServer_addr, taskList)
-
-	go func() {
-		apiserver.Serve()
-	}()
-
 	if _, ts := utils.NewTServer(masterAddr, jobManagerSvr); ts != nil {
 		log.Fatalln(ts.Serve())
 	}
 
+}
+
+func Gettask() {
+	var taskjson *utils.RcsTaskReqJson
+	var task *utils.RcsTaskReq
+	var err error
+	for {
+		taskjson, err = utils.GetTaskinfo(redisClient3.Get())
+		if err != nil {
+			//log.Println(err)
+			continue
+		}
+		task, err = taskjson.Parse()
+		if err != nil {
+			//log.Println(err)
+			continue
+		}
+		taskList <- task
+		time.Sleep(time.Millisecond * 10)
+	}
 }
