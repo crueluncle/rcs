@@ -84,7 +84,7 @@ func (ts TServer) Serve() error {
 			log.Println("TServer.Serve:", err)
 			continue
 		}
-		log.Println("Server accept a connection from:", conn.RemoteAddr().String())
+		log.Println("Server accept a connection from:", conn.RemoteAddr().String(), "-->", conn.LocalAddr().String())
 		go func(conn *net.TCPConn) {
 			e := ts.HandleConn(conn)
 			log.Println("Server end a connection from:", conn.RemoteAddr().String(), e)
@@ -147,11 +147,11 @@ recon:
 			return errors.New("Client connect timeout")
 		}
 	}
-	log.Println("Client connect ok to:", conn.RemoteAddr())
+	log.Println("Client connect ok to:", conn.LocalAddr().String(), "-->", conn.RemoteAddr().String())
 	conn.SetKeepAlive(true)
 	conn.SetKeepAlivePeriod(time.Second * 30)
 	e := tc.HandleConn(conn)
-	log.Println("Client connection terminated to:", conn.RemoteAddr(), e)
+	log.Println("Client connection terminated to:", conn.RemoteAddr().String(), e)
 	if tc.reconnectAfterTerminal {
 		time.Sleep(time.Second * time.Duration(tc.reconnectDuration))
 		goto recon

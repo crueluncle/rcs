@@ -122,16 +122,16 @@ func Writeresponserun(msg *RcsTaskResp, rc redis.Conn) error {
 }
 
 //////////////////////////////////////////
-func WriteAgentinfo(jsvip string, msg *AgentSyncMsg, rc redis.Conn) error {
+func WriteAgentinfo(msg *AgentSyncMsg, rc redis.Conn) error {
 	defer rc.Close()
 
 	switch msg.Op {
 	case "add":
-		if _, e := redis.Int(rc.Do("sadd", jsvip, msg.Agentip)); e != nil {
+		if _, e := redis.Int(rc.Do("sadd", msg.Jip, msg.Agentip)); e != nil {
 			return e
 		}
 	case "del":
-		if _, e := redis.Int(rc.Do("srem", jsvip, msg.Agentip)); e != nil {
+		if _, e := redis.Int(rc.Do("srem", msg.Jip, msg.Agentip)); e != nil {
 			return e
 		}
 	default:

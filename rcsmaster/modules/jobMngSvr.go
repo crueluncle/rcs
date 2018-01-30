@@ -35,10 +35,11 @@ func NewJobsvrManager(getredisconfunc1, getredisconfunc2 func() redis.Conn, task
 			time.Sleep(time.Minute)
 		}
 	}()
-
+	go jsm.broadcastTask()
+	go jsm.handleMsgfromjsv()
 	jsm.ctnlocker = new(sync.RWMutex)
 	jsm.jobsvrCtn = jContainer(make(map[string]*jobsvrEntry))
-	jsm.msgchan = make(chan interface{}, 32)
+	jsm.msgchan = make(chan interface{}, 128)
 	jsm.tasklist = tasklistchan
 	jsm.f1 = getredisconfunc1
 	jsm.f2 = getredisconfunc2
@@ -63,8 +64,6 @@ func (jsm jobsvrManager) HandleConn(conn *net.TCPConn) error {
 		return errors.New("Jobsvr regist conflict,closing the connection!")
 	}
 	jsm.addjobsvr(ip, &jobsvrEntry{conn, connrwer})
-	go jsm.broadcastTask()
-	go jsm.saveResponse(ip)
 	err := connrwer.Read(jsm.msgchan)
 	jsm.deljobsvr(ip)
 	log.Println("Close the connection from jobsvr:", err, conn.LocalAddr(), "<----->", conn.RemoteAddr())
@@ -96,30 +95,32 @@ func (jsm *jobsvrManager) getjobsvr(key string) *jobsvrEntry {
 	return r
 }
 func (jsm *jobsvrManager) broadcastTask() error {
-	if len(jsm.jobsvrCtn) == 0 {
-		return errors.New("No jobsvr exist!")
-	}
+
 	for task := range jsm.tasklist { //广播模式,后续优化为路由模式
+		if len(jsm.jobsvrCtn) == 0 {
+			return errors.New("No jobsvr exists!")
+		}
 		for ip, jsinfo := range jsm.jobsvrCtn {
 			if jsinfo == nil {
-				return errors.New("Have invalid jobsvr!")
+				return errors.New("jobsvr invalid!")
 			}
 			err := jsinfo.connrwer.Write(task)
 			if err != nil {
 				jsm.deljobsvr(ip)
-				log.Println("Send task to jobsvr error:", err)
+				log.Printf("Send task %s to jobsvr %s failed:%s\n", task.Runid, ip, err.Error())
 				return err
 			}
-			log.Println("Send one task to jobsvr done!")
+			log.Printf("Send task %s to jobsvr %s done!\n", task.Runid, ip)
 		}
+		log.Printf("Send task %s to all jobsvr done!\n", task.Runid)
 	}
 	return nil
 }
-func (jsm *jobsvrManager) saveResponse(jobsvrip string) {
-
+func (jsm *jobsvrManager) handleMsgfromjsv() {
 	for msg := range jsm.msgchan {
-		if _, ok := msg.(*utils.KeepaliveMsg); ok { //结接收到心跳消息
-		} else if res, ok := msg.(*utils.RcsTaskResp); ok { //接收到响应消息
+		switch res := msg.(type) {
+		case *utils.KeepaliveMsg:
+		case *utils.RcsTaskResp:
 			var i int
 			for i = 0; i < 3; i++ {
 				e := utils.Writeresponserun(res, jsm.f1())
@@ -134,15 +135,16 @@ func (jsm *jobsvrManager) saveResponse(jobsvrip string) {
 			if i == 3 {
 				log.Println("One response Write2redis failed:", res.Runid, res.AgentIP)
 				//ch <- res //失败3次的结果重新放入队列
-				continue //
-			}
-			log.Println("Got one response msg from jobsvr and put in db success!", res.Runid, res.AgentIP)
-		} else if res, ok := msg.(*utils.AgentSyncMsg); ok { //接收到agent同步信息
-			e := utils.WriteAgentinfo(jobsvrip, res, jsm.f2())
-			if e != nil {
-				log.Println("One Agentinfo Write2redis failed:", e, res.Op, res.Agentip)
 				continue
 			}
+			log.Println("Got one response msg from jobsvr and write db success!", res.Runid, res.AgentIP)
+		case *utils.AgentSyncMsg:
+			e := utils.WriteAgentinfo(res, jsm.f2())
+			if e != nil {
+				log.Println("sync Agentinfo  msg  failed:", e, res.Op, res.Agentip)
+				continue
+			}
+			log.Println("sync Agentinfo msg from jobsvr success!", res.Agentip)
 		}
 	}
 

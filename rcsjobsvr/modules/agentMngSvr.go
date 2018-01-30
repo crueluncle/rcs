@@ -100,11 +100,11 @@ func (am *agentMngSvr) addagent(key string, val *agentEntry) {
 	am.agentCtn[key] = val
 
 	am.ctnlock.Unlock()
-	am.syncchan <- &utils.AgentSyncMsg{"add", key, runtime.GOOS} //sync to master
+	am.syncchan <- &utils.AgentSyncMsg{"", "add", key, runtime.GOOS} //sync to master
 }
 func (am *agentMngSvr) delagent(key string) {
 	ai := am.Getagent(key)
-	am.syncchan <- &utils.AgentSyncMsg{"del", key, ""} //sync to master
+	am.syncchan <- &utils.AgentSyncMsg{"", "del", key, ""} //sync to master
 	am.ctnlock.Lock()
 	if ai != nil {
 		delete(am.agentCtn, key)

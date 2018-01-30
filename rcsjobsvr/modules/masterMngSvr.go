@@ -1,23 +1,24 @@
 package modules
 
 import (
+	"context"
 	"log"
-	"os"
-	"runtime/debug"
-	//	"sync"
 	"net"
+	"os"
 	"rcs/utils"
+	"runtime/debug"
+	"strings"
 	"time"
 )
 
 type masterMngSvr struct {
 	tasks    chan<- interface{}
-	resps    <-chan *utils.RcsTaskResp
-	syncchan <-chan *utils.AgentSyncMsg
+	resps    chan *utils.RcsTaskResp
+	syncchan chan *utils.AgentSyncMsg
 	cdr      utils.Codecer
 }
 
-func NewMasterManager(tchan chan<- interface{}, respchan <-chan *utils.RcsTaskResp, syncch <-chan *utils.AgentSyncMsg) *masterMngSvr {
+func NewMasterManager(tchan chan<- interface{}, respchan chan *utils.RcsTaskResp, syncch chan *utils.AgentSyncMsg) *masterMngSvr {
 	return &masterMngSvr{
 		tasks:    tchan,
 		resps:    respchan,
@@ -32,21 +33,15 @@ func (mm masterMngSvr) HandleConn(conn *net.TCPConn) error {
 			os.Exit(1)
 		}
 	}()
+	//log.Println("conn:", conn.LocalAddr(), "-->", conn.RemoteAddr())
 	decoder := utils.NewCodecer(conn)
 	mm.cdr = decoder
-	go mm.keepalive()
-	go mm.sendResp()
-	go mm.syncagent()
-	if decoder != nil { //读出task放到tasks
-		err := decoder.Read(mm.tasks)
-		if err != nil {
-			_ = decoder.Close()
-			return err
-		}
-	}
-	return nil
-}
-func (mm masterMngSvr) keepalive() {
+	cxt, cancel := context.WithCancel(context.Background())
+	jsvip := strings.Split(conn.LocalAddr().String(), ":")[0]
+	go mm.sendResp(cxt)
+	go mm.syncagent(cxt, jsvip)
+	go mm.getTask(cxt)
+
 	km := new(utils.KeepaliveMsg)
 	var err error
 	for i := 0; ; i++ {
@@ -56,30 +51,69 @@ func (mm masterMngSvr) keepalive() {
 		if err != nil {
 			break
 		}
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 3)
 	}
+	cancel()
 	_ = mm.cdr.Close()
+	return err
 }
-func (mm masterMngSvr) sendResp() {
+func (mm masterMngSvr) sendResp(ctx context.Context) {
+	//defer mm.cdr.Close()
 	for r := range mm.resps {
-		//log.Println("Got a task response:", r)
-		err := mm.cdr.Write(r)
-		if err != nil {
-			log.Println(err)
-			break
+		select {
+		case <-ctx.Done():
+			mm.resps <- r
+			return
+		default:
+			err := mm.cdr.Write(r)
+			if err != nil {
+				log.Println("Send taskresponse to master failed:", err, r.Runid)
+				mm.resps <- r
+				_ = mm.cdr.Close()
+				return
+			}
+			log.Println("Send taskresponse to master done:", r.Runid)
 		}
-		log.Println("Send taskresponse to master done:", r.Runid)
 	}
-	_ = mm.cdr.Close()
 }
-func (mm masterMngSvr) syncagent() {
+func (mm masterMngSvr) syncagent(ctx context.Context, jip string) {
+	//defer mm.cdr.Close()
 	for r := range mm.syncchan {
-		err := mm.cdr.Write(r)
-		if err != nil {
-			log.Println(err)
-			break
+		select {
+		case <-ctx.Done():
+			mm.syncchan <- r
+			return
+		default:
+			r.Jip = jip
+			err := mm.cdr.Write(r)
+			if err != nil {
+				log.Println(err)
+				mm.syncchan <- r
+				_ = mm.cdr.Close()
+				return
+			}
+			log.Println("Sync agentinfo to master done:", r.Agentip)
 		}
-		log.Println("Sync agentinfo to master done:", r.Agentip)
 	}
-	_ = mm.cdr.Close()
+
+}
+func (mm masterMngSvr) getTask(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			if mm.cdr != nil { //读出task放到tasks
+				err := mm.cdr.Read(mm.tasks)
+				if err != nil {
+					log.Println(err)
+					_ = mm.cdr.Close()
+					return
+				}
+			} else {
+				return
+			}
+		}
+	}
+
 }

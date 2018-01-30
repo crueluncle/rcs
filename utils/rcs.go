@@ -107,6 +107,7 @@ type KeepaliveMsg struct { //mater与jobsvr之间的探测消息
 	Sn int
 }
 type AgentSyncMsg struct { //sync to master
+	Jip     string
 	Op      string //'add' 'del'
 	Agentip string
 	Ostype  string
