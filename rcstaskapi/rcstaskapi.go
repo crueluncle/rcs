@@ -10,20 +10,21 @@ import (
 	"rcs/utils"
 	"runtime/debug"
 
-	"github.com/garyburd/redigo/redis"
+	//	"github.com/garyburd/redigo/redis"
 	"github.com/pborman/uuid"
 )
 
 var apiServer_addr string
 var logfile *os.File
-var redisClient *redis.Pool
+
+//var redisClient *redis.Pool
+var producer *utils.Pdcser
 var errs error
 var (
-	redisconstr,
-	redispass string
-	redisDB,
-	rMaxIdle,
-	rMaxActive int
+	mqUri,
+	exChangeName,
+	queueName,
+	rKey string
 )
 
 func init() {
@@ -43,19 +44,22 @@ func init() {
 	defcfg := `;section Base defines some params,'SectionName' in []  must be uniq globally.
 [BASE]
 apiServer_addr     = 0.0.0.0:9527
-redisconstr = 127.0.0.1:6379
-redisDB = 0
-redispass   = yourPassword
-rMaxIdle    = 10
-rMaxActive  = 100`
+mqUri = amqp://admin:admin@127.0.0.1:5672/
+exChangeName = rcs
+queueName = task
+rKey = task.msg`
 	cf := utils.HandleConfigFile("cfg/rcstaskapi.ini", defcfg)
 	apiServer_addr = cf.MustValue("BASE", "apiServer_addr")
-	redisconstr = cf.MustValue("BASE", "redisconstr")
-	redisDB = cf.MustInt("BASE", "redisDB")
-	redispass = cf.MustValue("BASE", "redispass")
-	rMaxIdle = cf.MustInt("BASE", "rMaxIdle")
-	rMaxActive = cf.MustInt("BASE", "rMaxActive")
-	redisClient, errs = utils.Newredisclient(redisconstr, redispass, redisDB, rMaxIdle, rMaxActive) //for write redis
+	mqUri = cf.MustValue("BASE", "mqUri")
+	exChangeName = cf.MustValue("BASE", "exChangeName")
+	queueName = cf.MustValue("BASE", "queueName")
+	rKey = cf.MustValue("BASE", "rKey")
+	/*
+		redisClient, errs = utils.Newredisclient(redisconstr, redispass, redisDB, rMaxIdle, rMaxActive) //for write redis
+		if errs != nil {
+			log.Fatalln(errs)
+		}*/
+	producer, errs = utils.Newpdcser(mqUri, exChangeName, queueName, rKey)
 	if errs != nil {
 		log.Fatalln(errs)
 	}
@@ -68,6 +72,7 @@ func main() {
 			os.Exit(1)
 		}
 	}()
+	defer producer.Close()
 	http.HandleFunc("/runtask", runtask)
 
 	log.Println("Api Server start ok:", apiServer_addr)
@@ -111,7 +116,14 @@ func runtask(w http.ResponseWriter, r *http.Request) {
 			rs.ErrStatus = err.Error()
 			rs.EncodeJson(w)
 		}
-		err = utils.WriteTaskinfo(task, redisClient.Get())
+		/*err = utils.WriteTaskinfo(task, redisClient.Get())
+		if err != nil {
+			log.Println(err)
+			rs.ErrStatus = err.Error()
+			rs.EncodeJson(w)
+		}*/
+		taskdata, err := json.Marshal(task)
+		err = producer.Publish(taskdata)
 		if err != nil {
 			log.Println(err)
 			rs.ErrStatus = err.Error()

@@ -1,8 +1,14 @@
 package utils
 
+/*
+define a light rabbit framwork whit featrues like:
+1.exchang,channal,messages are all seted to be presistent
+2.one connection with one channal
+3.channel.Qos(1, 0, false)
+4.reconnect when socket close.
+*/
 import (
 	"errors"
-	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -10,7 +16,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-type pdcser struct {
+type Pdcser struct {
 	uri,
 	exchangeName,
 	queueName,
@@ -19,18 +25,20 @@ type pdcser struct {
 	chanl *amqp.Channel
 }
 
-func Newpdcser(amqpuri, exname, qNname, rk string) *pdcser {
-	pc := &pdcser{
+func Newpdcser(amqpuri, exname, qNname, rk string) (*Pdcser, error) {
+	pc := &Pdcser{
 		uri:          amqpuri,
 		exchangeName: exname,
 		queueName:    qNname,
 		rkey:         rk,
 	}
-	pc.init()
-	return pc
-
+	err := pc.init()
+	if err != nil {
+		return nil, err
+	}
+	return pc, nil
 }
-func (p *pdcser) init() {
+func (p *Pdcser) init() error {
 	var connection *amqp.Connection
 	var err error
 	//建立一个连接
@@ -47,7 +55,10 @@ func (p *pdcser) init() {
 	//defer connection.Close()
 	//创建一个Channel
 	channel, err := connection.Channel()
-	failOnError(err, "Failed to open a channel")
+	if err != nil {
+		return err
+	}
+
 	//defer channel.Close()
 	p.chanl = channel
 	//创建一个exchange
@@ -60,9 +71,13 @@ func (p *pdcser) init() {
 		false,
 		nil,
 	)
-	failOnError(err, "Failed to declare an exchange")
+	if err != nil {
+		return err
+	}
 	err = channel.Qos(1, 0, false) //确保公平分发
-	failOnError(err, "Failed to set qos")
+	if err != nil {
+		return err
+	}
 	//创建一个queue
 	q, err := channel.QueueDeclare(
 		p.queueName, // name
@@ -72,17 +87,24 @@ func (p *pdcser) init() {
 		false,       // no-wait
 		nil,         // arguments
 	)
-	failOnError(err, "Failed to declare a queue")
+	if err != nil {
+		return err
+	}
 	//绑定
 	err = channel.QueueBind(q.Name, p.rkey, p.exchangeName, false, nil)
-	failOnError(err, "Failed to bind exchange and queue")
+	if err != nil {
+		return err
+	}
+	return nil
 }
-func (p *pdcser) Publish(msg []byte) error {
+func (p *Pdcser) Publish(msg []byte) error {
 	var err error
 	select {
 	case <-p.conn.NotifyClose(make(chan *amqp.Error)):
 		log.Println("connection to MQServer closed,reconnecting...")
-		p.init()
+		if err = p.init(); err != nil {
+			return err
+		}
 		err = errors.New("Reconnected")
 	default:
 		err = p.chanl.Publish(
@@ -100,10 +122,9 @@ func (p *pdcser) Publish(msg []byte) error {
 	}
 	return err
 }
-func (p *pdcser) Comsumer(msgs <-chan amqp.Delivery) error {
-	var err error
-	//msgch := (<-chan amqp.Delivery)(msgs)
-	msgs, err = p.chanl.Consume(
+func (p *Pdcser) Comsumer(ch chan []byte) error {
+recon:
+	msgs, err := p.chanl.Consume(
 		p.queueName, // queue
 		"",          // consumer
 		false,       // auto-ack,不是真正的comsumer确认,需要应用层主动回复ack
@@ -112,16 +133,26 @@ func (p *pdcser) Comsumer(msgs <-chan amqp.Delivery) error {
 		false,       // no-wait
 		nil,         // args
 	)
+	if err != nil {
+		return err
+	}
+	ech := make(chan *amqp.Error)
+	for {
+		select {
+		case <-p.conn.NotifyClose(ech):
+			log.Println("connection to MQServer closed,reconnecting...")
+			if err := p.init(); err != nil {
+				return err
+			}
+			goto recon
+		case d := <-msgs:
+			ch <- d.Body
+			d.Ack(true)
+		}
+	}
 
-	return err
 }
-func (p *pdcser) Close() {
+func (p *Pdcser) Close() {
 	_ = p.chanl.Close()
 	_ = p.conn.Close()
-}
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-		panic(fmt.Sprintf("%s: %s", msg, err))
-	}
 }

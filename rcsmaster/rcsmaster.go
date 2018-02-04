@@ -8,6 +8,7 @@ package main
 */
 import (
 	"encoding/gob"
+	"encoding/json"
 	"io"
 	"log"
 	"os"
@@ -16,7 +17,7 @@ import (
 	"rcs/utils"
 	"runtime"
 	"runtime/debug"
-	"time"
+	//	"time"
 
 	"github.com/garyburd/redigo/redis"
 )
@@ -24,23 +25,19 @@ import (
 var (
 	masterAddr,
 	apiServer_addr,
-	redisconstr,
-	syncredisconstr,
-	taskredisconstr,
-	redispass, syncredispass, taskredispass string
-	redisDB,
-	syncredisDB, //redis DB
-	taskredisDB,
-	rMaxIdle,
-	syncrMaxIdle, //redis连接池最大空闲连接
-	taskrMaxIdle,
-	rMaxActive,
-	syncrMaxActive,
-	taskrMaxActive int //redis连接池最大连接数
-
+	redisconstr, syncredisconstr,
+	redispass, syncredispass string
+	redisDB, syncredisDB, //redis DB
+	rMaxIdle, syncrMaxIdle, //redis连接池最大空闲连接
+	rMaxActive, syncrMaxActive int //redis连接池最大连接数
+	mqUri,
+	exChangeName,
+	queueName,
+	rKey string
 )
 var logfile *os.File
-var redisClient1, redisClient2, redisClient3 *redis.Pool
+var redisClient1, redisClient2 *redis.Pool
+var comsumer *utils.Pdcser
 var taskList chan *utils.RcsTaskReq
 
 func init() {
@@ -103,12 +100,11 @@ redisDB = 1
 redispass   = yourPassword
 rMaxIdle    = 100
 rMaxActive  = 1000
-[TaskRedis]
-redisconstr = 127.0.0.1:6379
-redisDB = 1
-redispass   = yourPassword
-rMaxIdle    = 10
-rMaxActive  = 100`
+[TaskMq]
+mqUri = amqp://admin:admin@127.0.0.1:5672/
+exChangeName = rcs
+queueName = task
+rKey = task.msg`
 	cf := utils.HandleConfigFile("cfg/rcsmaster.ini", defcfg)
 	masterAddr = cf.MustValue("BASE", "masterAddr")
 
@@ -124,11 +120,10 @@ rMaxActive  = 100`
 	syncrMaxIdle = cf.MustInt("SyncRedis", "rMaxIdle")
 	syncrMaxActive = cf.MustInt("SyncRedis", "rMaxActive")
 
-	taskredisconstr = cf.MustValue("TaskRedis", "redisconstr")
-	taskredisDB = cf.MustInt("TaskRedis", "redisDB")
-	taskredispass = cf.MustValue("TaskRedis", "redispass")
-	taskrMaxIdle = cf.MustInt("TaskRedis", "rMaxIdle")
-	taskrMaxActive = cf.MustInt("TaskRedis", "rMaxActive")
+	mqUri = cf.MustValue("TaskMq", "mqUri")
+	exChangeName = cf.MustValue("TaskMq", "exChangeName")
+	queueName = cf.MustValue("TaskMq", "queueName")
+	rKey = cf.MustValue("TaskMq", "rKey")
 
 	taskList = make(chan *utils.RcsTaskReq, 64)
 	redisClient1, errs = utils.Newredisclient(redisconstr, redispass, redisDB, rMaxIdle, rMaxActive) //for write response msg
@@ -139,7 +134,7 @@ rMaxActive  = 100`
 	if errs != nil {
 		log.Fatalln(errs)
 	}
-	redisClient3, errs = utils.Newredisclient(taskredisconstr, taskredispass, taskredisDB, taskrMaxIdle, taskrMaxActive) //for read task data
+	comsumer, errs = utils.Newpdcser(mqUri, exChangeName, queueName, rKey)
 	if errs != nil {
 		log.Fatalln(errs)
 	}
@@ -151,31 +146,37 @@ func main() {
 		}
 	}()
 	defer logfile.Close()
+	defer comsumer.Close()
 	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
-	go Gettask()
+	var msgs = make(chan []byte, 128)
+
+	go func() {
+		var (
+			taskjson *utils.RcsTaskReqJson
+			task     *utils.RcsTaskReq
+			err      error
+		)
+		for taskdata := range msgs {
+			err = json.Unmarshal(taskdata, taskjson)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			task, err = taskjson.Parse()
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			taskList <- task
+		}
+	}()
+	go func() {
+		log.Fatalln(comsumer.Comsumer(msgs))
+	}()
+
 	var jobManagerSvr = modules.NewJobsvrManager(redisClient1.Get, redisClient2.Get, taskList)
 	if _, ts := utils.NewTServer(masterAddr, jobManagerSvr); ts != nil {
 		log.Fatalln(ts.Serve())
 	}
 
-}
-
-func Gettask() {
-	var taskjson *utils.RcsTaskReqJson
-	var task *utils.RcsTaskReq
-	var err error
-	for {
-		taskjson, err = utils.GetTaskinfo(redisClient3.Get())
-		if err != nil {
-			//log.Println(err)
-			continue
-		}
-		task, err = taskjson.Parse()
-		if err != nil {
-			//log.Println(err)
-			continue
-		}
-		taskList <- task
-		time.Sleep(time.Millisecond * 100)
-	}
 }
