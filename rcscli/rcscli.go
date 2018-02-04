@@ -65,7 +65,7 @@ GettaskresultAPiUrl        = http://127.0.0.1:9528/gettaskresult
 getagentresultApiUrl       = http://127.0.0.1:9528/getAgentResult
 getagentresultinsuccApiUrl = http://127.0.0.1:9528/getagentresultinsucc
 getagentresultinfailApiUrl = http://127.0.0.1:9528/getagentresultinfail
-TaskHandleTimeout          = 600                           
+TaskHandleTimeout          = 600
 Fileregistry               = http://127.0.0.1:8096/upload`
 
 	cf := utils.HandleConfigFile(confilename, defcfg)
@@ -108,7 +108,7 @@ file.rename        -- run 'rename' command on remote targets for rename file or 
 file.grep          -- run 'grep' command on remote targets for grep file content
 file.replace       -- run 'replace' command on remote targets for replace text file
 file.mreplace      -- run 'mreplace' command on remote targets for replace multiple text files
-file.md5sum        -- run 'md5sum' command on remote targets for compute file md5sum 
+file.md5sum        -- run 'md5sum' command on remote targets for compute file md5sum
 file.ckmd5sum      -- run 'ckmd5sum' command on remote targets for check md5sum of files defined in md5sum file
 file.zip           -- run 'zip' command on remote targets for zip files or directory
 file.unzip         -- run 'unzip' command on remote targets for unzip zipdfile
@@ -383,6 +383,7 @@ rcs.ping           -- for rcsping remote targets`)
 	}
 
 	uuid := vv.Uuid
+	log.Println("Task submited", uuid, "query result...")
 	suc := new(int32)
 	fad := new(int32)
 	an := len(rr.Targets)

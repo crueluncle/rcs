@@ -152,7 +152,7 @@ func main() {
 
 	go func() {
 		var (
-			taskjson *utils.RcsTaskReqJson
+			taskjson = new(utils.RcsTaskReqJson)
 			task     *utils.RcsTaskReq
 			err      error
 		)
