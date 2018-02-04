@@ -38,6 +38,7 @@ var (
 var logfile *os.File
 var redisClient1, redisClient2 *redis.Pool
 var comsumer *utils.Pdcser
+var msgs = make(chan []byte, 64)
 var taskList chan *utils.RcsTaskReq
 
 func init() {
@@ -148,7 +149,6 @@ func main() {
 	defer logfile.Close()
 	defer comsumer.Close()
 	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
-	var msgs = make(chan []byte, 128)
 
 	go func() {
 		var (
