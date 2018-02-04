@@ -167,6 +167,7 @@ func main() {
 				log.Println(err)
 				continue
 			}
+			log.Println("Fetch a task from mq:", task.Runid)
 			taskList <- task
 		}
 	}()
