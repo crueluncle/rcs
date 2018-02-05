@@ -97,8 +97,13 @@ func (jsm *jobsvrManager) getjobsvr(key string) *jobsvrEntry {
 func (jsm *jobsvrManager) broadcastTask() error {
 
 	for task := range jsm.tasklist { //广播模式,后续优化为路由模式
-		if len(jsm.jobsvrCtn) == 0 {
-			return errors.New("No jobsvr exists!")
+		for {
+			if len(jsm.jobsvrCtn) == 0 {
+				log.Println("No jobsvr exists,pending...")
+				time.Sleep(time.Millisecond * 100)
+				continue
+			}
+			break
 		}
 		for ip, jsinfo := range jsm.jobsvrCtn {
 			if jsinfo == nil {

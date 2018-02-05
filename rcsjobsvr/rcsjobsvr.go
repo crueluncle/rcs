@@ -83,7 +83,7 @@ func init() { //初始化操作
 routeId			   = 10000
 rpcTimeOut         = 3600
 agentCKT           = 30
-masterCKT          = 30
+masterCKT          = 3
 taskLength         = 1280
 jobsvrAddr         = 0.0.0.0:9529
 masterAddr         = 127.0.0.1:9525
