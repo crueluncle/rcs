@@ -23,11 +23,11 @@ type jobsvrManager struct {
 	ctnlocker *sync.RWMutex //protect jobsvrCtn
 	jobsvrCtn jContainer
 	msgchan   chan interface{}
-	tasklist  <-chan *utils.RcsTaskReq
+	tasklist  <-chan *utils.RcsTaskReqJson
 	f1, f2    func() redis.Conn
 }
 
-func NewJobsvrManager(getredisconfunc1, getredisconfunc2 func() redis.Conn, tasklistchan <-chan *utils.RcsTaskReq) *jobsvrManager {
+func NewJobsvrManager(getredisconfunc1, getredisconfunc2 func() redis.Conn, tasklistchan <-chan *utils.RcsTaskReqJson) *jobsvrManager {
 	jsm := new(jobsvrManager)
 	go func() {
 		for {

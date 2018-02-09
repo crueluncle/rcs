@@ -39,12 +39,12 @@ var logfile *os.File
 var redisClient1, redisClient2 *redis.Pool
 var comsumer *utils.Pdcser
 var msgs = make(chan []byte, 64)
-var taskList chan *utils.RcsTaskReq
+var taskList chan *utils.RcsTaskReqJson
 
 func init() {
 	gob.Register(utils.KeepaliveMsg{})
 	gob.Register(utils.RcsTaskResp{})
-	gob.Register(utils.RcsTaskReq{})
+	gob.Register(utils.RcsTaskReqJson{})
 	gob.Register(utils.AgentSyncMsg{})
 	gob.Register(&agentmod.File_push_req{})
 	gob.Register(&agentmod.File_pull_req{})
@@ -126,7 +126,7 @@ rKey = task.msg`
 	queueName = cf.MustValue("TaskMq", "queueName")
 	rKey = cf.MustValue("TaskMq", "rKey")
 
-	taskList = make(chan *utils.RcsTaskReq, 64)
+	taskList = make(chan *utils.RcsTaskReqJson, 64)
 	redisClient1, errs = utils.Newredisclient(redisconstr, redispass, redisDB, rMaxIdle, rMaxActive) //for write response msg
 	if errs != nil {
 		log.Fatalln(errs)
@@ -153,7 +153,6 @@ func main() {
 	go func() {
 		var (
 			taskjson = new(utils.RcsTaskReqJson)
-			task     *utils.RcsTaskReq
 			err      error
 		)
 		for taskdata := range msgs {
@@ -162,13 +161,8 @@ func main() {
 				log.Println(err)
 				continue
 			}
-			task, err = taskjson.Parse()
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			log.Println("Fetch a task from mq:", task.Runid)
-			taskList <- task
+			log.Println("Fetch a task from mq:", taskjson.Runid)
+			taskList <- taskjson
 		}
 	}()
 	go func() {

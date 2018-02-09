@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"math/rand"
@@ -27,10 +28,10 @@ type agentMngSvr struct {
 	ctnlock           *sync.RWMutex //protect 'agentCtn'
 	agentCtn          acontainer
 	keepAliveDuration int
-	syncchan          chan<- *utils.AgentSyncMsg
+	p                 *utils.Pdcser
 }
 
-func NewAgentMngSvr(ackt int, ch chan<- *utils.AgentSyncMsg) *agentMngSvr {
+func NewAgentMngSvr(ackt int, p *utils.Pdcser) *agentMngSvr {
 	am := new(agentMngSvr)
 	go func() {
 		for {
@@ -41,7 +42,7 @@ func NewAgentMngSvr(ackt int, ch chan<- *utils.AgentSyncMsg) *agentMngSvr {
 	am.ctnlock = new(sync.RWMutex)
 	am.agentCtn = acontainer(make(map[string]*agentEntry))
 	am.keepAliveDuration = ackt
-	am.syncchan = ch
+	am.p = p
 	return am
 }
 func (am agentMngSvr) HandleConn(conn *net.TCPConn) error {
@@ -100,11 +101,28 @@ func (am *agentMngSvr) addagent(key string, val *agentEntry) {
 	am.agentCtn[key] = val
 
 	am.ctnlock.Unlock()
-	am.syncchan <- &utils.AgentSyncMsg{"", "add", key, runtime.GOOS} //sync to master
+	info := &utils.AgentSyncMsg{"", "add", key, runtime.GOOS} //send to MQ
+	data, err := json.Marshal(info)
+	if err != nil {
+		log.Println(err)
+	}
+	err = am.p.Publish(data)
+	if err != nil {
+		log.Println(err)
+	}
+
 }
 func (am *agentMngSvr) delagent(key string) {
 	ai := am.Getagent(key)
-	am.syncchan <- &utils.AgentSyncMsg{"", "del", key, ""} //sync to master
+	info := &utils.AgentSyncMsg{"", "del", key, ""} //send to MQ
+	data, err := json.Marshal(info)
+	if err != nil {
+		log.Println(err)
+	}
+	err = am.p.Publish(data)
+	if err != nil {
+		log.Println(err)
+	}
 	am.ctnlock.Lock()
 	if ai != nil {
 		delete(am.agentCtn, key)

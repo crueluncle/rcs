@@ -7,6 +7,7 @@ import (
 	"rcs/rcsagent/modules"
 	"rcs/utils"
 	//	"reflect"
+	"encoding/json"
 	"net/url"
 	"path/filepath"
 	"runtime/debug"
@@ -18,19 +19,18 @@ import (
 type taskHandler struct {
 	rpcto         int
 	fcdir, fcaddr string
-	tasks         <-chan interface{}
-	resps         chan<- *utils.RcsTaskResp
 	getAgent      func(string) *agentEntry
+	p, c          *utils.Pdcser
 }
 
-func NewTaskHandler(rpctimeout int, filecdir, filecaddr string, tchan <-chan interface{}, respchan chan<- *utils.RcsTaskResp, getfunc func(string) *agentEntry) *taskHandler {
+func NewTaskHandler(rpctimeout int, filecdir, filecaddr string, p, c *utils.Pdcser, getfunc func(string) *agentEntry) *taskHandler {
 	return &taskHandler{
 		rpcto:    rpctimeout,
 		fcdir:    filecdir,
 		fcaddr:   filecaddr,
-		tasks:    tchan,
-		resps:    respchan,
 		getAgent: getfunc,
+		p:        p,
+		c:        c,
 	}
 }
 func (th *taskHandler) Run() {
@@ -40,6 +40,32 @@ func (th *taskHandler) Run() {
 			os.Exit(1)
 		}
 	}()
+	var msgs = make(chan []byte, 64)
+	var err error
+	taskdata := new(utils.RcsTaskReqJson)
+	go func() {
+		log.Fatalln(th.c.Comsumer(msgs))
+	}()
+	for data := range msgs {
+		err = json.Unmarshal(data, taskdata)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		log.Println("Fetch a taskreq msg from mq:", taskdata.Runid)
+		task, err := taskdata.Parse()
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		once := new(sync.Once)
+		for _, ip := range task.Targets {
+			go th.handlerequest(task.Runid, ip, task.Atomicrequest, once) //对于一个任务中的多个agent进行并发处理；task.AtomicReq是一个interface(引用变量),非并发安全
+		}
+	}
+}
+
+/*
 	for v := range th.tasks {
 		if task, ok := v.(*utils.RcsTaskReq); ok {
 			log.Println("Got a task request:", task.Runid)
@@ -48,16 +74,22 @@ func (th *taskHandler) Run() {
 				go th.handlerequest(task.Runid, ip, task.Atomicrequest, once) //对于一个任务中的多个agent进行并发处理；task.AtomicReq是一个interface(引用变量),非并发安全
 			}
 		}
-	}
+	}*/
 
-}
 func (th *taskHandler) handlerequest(rid, ip string, req modules.Atomicrequest, once *sync.Once) {
 	resp, err := th.rpccall(rid, ip, req, once)
 	if err != nil {
 		log.Println("th.rpccall:", err)
 		return
 	}
-	th.resps <- resp
+	data, err := json.Marshal(resp)
+	if err != nil {
+		log.Println(err)
+	}
+	err = th.p.Publish(data)
+	if err != nil {
+		log.Println(err)
+	}
 }
 func (th *taskHandler) rpccall(rid string, ip string, req modules.Atomicrequest, once *sync.Once) (response *utils.RcsTaskResp, err error) {
 	response = new(utils.RcsTaskResp)
