@@ -1,30 +1,12 @@
 #!/bin/bash
+basedir="rcs_release"
+for i in `find . -type f -name "main.go"`
+do 
+	fdir=`dirname $i`
+	lastelem=`echo "$fdir" |awk -F "/" '{print $NF}'`
+	go build  -o $basedir/$fdir/$lastelem $i
+done
 
-#(cd rcsagent && go build rcsagent_unix.go)
-(cd rcscli/ && go build rcscli.go)
-(cd rcsfileregistry/ && go build rcsfileregistry.go)
-(cd rcsjobsvr/ && go build rcsjobsvr.go)
-(cd rcsmaster/ && go build rcsmaster.go)
-(cd rcsqueryapi/ && go build rcsqueryapi.go)
-(cd rcstaskapi/ && go build rcstaskapi.go)
-
-
-#mkdir -p rcs_release/rcsagent/
-mkdir -p rcs_release/rcscli/
-mkdir -p rcs_release/rcsfileregistry/
-mkdir -p rcs_release/rcsjobsvr/
-mkdir -p rcs_release/rcsmaster/
-mkdir -p rcs_release/rcsqueryapi/
-mkdir -p rcs_release/rcstaskapi/
-
-#mv  rcsagent/rcsagent rcs_release/rcsagent/
-mv  rcscli/rcscli rcs_release/rcscli/
-mv  rcsfileregistry/rcsfileregistry rcs_release/rcsfileregistry/
-mv  rcsjobsvr/rcsjobsvr rcs_release/rcsjobsvr/
-mv  rcsmaster/rcsmaster rcs_release/rcsmaster/
-mv  rcsqueryapi/rcsqueryapi rcs_release/rcsqueryapi/
-mv  rcstaskapi/rcstaskapi rcs_release/rcstaskapi/
-
-tar -zcf  rcs_release.tgz rcs_release	
-rm -rf  rcs_release
-mv -f rcs_release.tgz /root/
+tar -zcf  $basedir.tgz $basedir
+rm -rf $basedir 
+mv -f $basedir.tgz /root/
