@@ -20,7 +20,8 @@ var logfile *os.File
 var prod_taskreq, coms_taskresp, coms_agentinfo *utils.Pdcser
 
 func init() { //初始化操作
-	utils.MsgTypeRegist(&utils.RcsTaskReq{})
+	//utils.MsgTypeRegist(&utils.RcsTaskReq{})
+	utils.MsgTypeRegist(&utils.RcsTaskReqJson{})
 	gob.Register(&agentmod.File_push_req{})
 	gob.Register(&agentmod.File_pull_req{})
 	gob.Register(&agentmod.File_cp_req{})

@@ -20,17 +20,17 @@ type taskHandler struct {
 	rpcto         int
 	fcdir, fcaddr string
 	getAgent      func(string) *agentEntry
-	p, c          *utils.Pdcser
+	c, p          *utils.Pdcser
 }
 
-func NewTaskHandler(rpctimeout int, filecdir, filecaddr string, p, c *utils.Pdcser, getfunc func(string) *agentEntry) *taskHandler {
+func NewTaskHandler(rpctimeout int, filecdir, filecaddr string, c, p *utils.Pdcser, getfunc func(string) *agentEntry) *taskHandler {
 	return &taskHandler{
 		rpcto:    rpctimeout,
 		fcdir:    filecdir,
 		fcaddr:   filecaddr,
 		getAgent: getfunc,
-		p:        p,
 		c:        c,
+		p:        p,
 	}
 }
 func (th *taskHandler) Run() {
@@ -64,17 +64,6 @@ func (th *taskHandler) Run() {
 		}
 	}
 }
-
-/*
-	for v := range th.tasks {
-		if task, ok := v.(*utils.RcsTaskReq); ok {
-			log.Println("Got a task request:", task.Runid)
-			once := new(sync.Once)
-			for _, ip := range task.Targets {
-				go th.handlerequest(task.Runid, ip, task.Atomicrequest, once) //对于一个任务中的多个agent进行并发处理；task.AtomicReq是一个interface(引用变量),非并发安全
-			}
-		}
-	}*/
 
 func (th *taskHandler) handlerequest(rid, ip string, req modules.Atomicrequest, once *sync.Once) {
 	resp, err := th.rpccall(rid, ip, req, once)

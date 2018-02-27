@@ -96,6 +96,9 @@ func (mm transfer) sendResp(ctx context.Context) {
 		taskresp = new(utils.RcsTaskResp)
 		err      error
 	)
+	go func() {
+		log.Fatalln(mm.c1.Comsumer(msgs))
+	}()
 	for taskdata := range msgs {
 		select {
 		case <-ctx.Done():
@@ -119,9 +122,6 @@ func (mm transfer) sendResp(ctx context.Context) {
 		}
 	}
 
-	go func() {
-		log.Fatalln(mm.c1.Comsumer(msgs))
-	}()
 }
 func (mm transfer) syncagent(ctx context.Context, jip string) {
 	var msgs = make(chan []byte, 64)
@@ -129,6 +129,9 @@ func (mm transfer) syncagent(ctx context.Context, jip string) {
 		syncinfo = new(utils.AgentSyncMsg)
 		err      error
 	)
+	go func() {
+		log.Fatalln(mm.c2.Comsumer(msgs))
+	}()
 	for syncdata := range msgs {
 		select {
 		case <-ctx.Done():
@@ -152,14 +155,21 @@ func (mm transfer) syncagent(ctx context.Context, jip string) {
 		}
 	}
 
-	go func() {
-		log.Fatalln(mm.c2.Comsumer(msgs))
-	}()
 }
 func (mm transfer) getTask(ctx context.Context) {
 	var tasks = make(chan interface{}, 64)
 	var taskdata []byte
 	var err error
+	go func() {
+		if mm.cdr != nil { //读出task放到tasks
+			err := mm.cdr.Read(tasks)
+			if err != nil {
+				log.Println(err)
+				_ = mm.cdr.Close()
+				return
+			}
+		}
+	}()
 	for t := range tasks {
 		select {
 		case <-ctx.Done():
@@ -180,16 +190,5 @@ func (mm transfer) getTask(ctx context.Context) {
 			}
 		}
 	}
-
-	go func() {
-		if mm.cdr != nil { //读出task放到tasks
-			err := mm.cdr.Read(tasks)
-			if err != nil {
-				log.Println(err)
-				_ = mm.cdr.Close()
-				return
-			}
-		}
-	}()
 
 }
