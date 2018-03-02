@@ -98,7 +98,7 @@ func (th *taskHandler) rpccall(rid string, ip string, req modules.Atomicrequest,
 	resp := new(modules.Atomicresponse)
 	var FileUrl, FileMd5 string
 	dl_file := func() {
-		if err := modules.Downloadfilefromurl(FileUrl, FileMd5, filepath.Join(th.fcdir, FileMd5)); err != nil {
+		if err := modules.Downloadfilefromurl(FileUrl, FileMd5, filepath.Join(`../rcsjobfilecache/`+th.fcdir, FileMd5)); err != nil {
 			log.Println("file cached faild:", FileUrl, err)
 			return
 		}

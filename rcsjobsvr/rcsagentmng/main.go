@@ -18,7 +18,7 @@ var (
 	agentCKT int
 	jobsvrAddr string
 	filecacheAddr,
-	filecachedir string //文件缓存服务器根目录
+	filecachedir string //文件缓存服务器根目录,配置rcsjobfilecache进程中的filecachedir
 	logfile *os.File
 )
 var coms_taskreq, prods_taskresp, prods_agentinfo *utils.Pdcser
