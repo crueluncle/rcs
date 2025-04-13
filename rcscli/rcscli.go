@@ -25,13 +25,13 @@ var successipfilename, failipfilename, timeoutipfilename string
 func init() {
 	tm := strconv.FormatInt(time.Now().Unix(), 10)
 
-	if err := os.MkdirAll(`result`, 0666); err != nil {
+	if err := os.MkdirAll(`result`, 0755); err != nil {
 		log.Fatalln(err)
 	}
-	if err := os.MkdirAll(`log`, 0666); err != nil {
+	if err := os.MkdirAll(`log`, 0755); err != nil {
 		log.Fatalln(err)
 	}
-	if err := os.MkdirAll(`cfg`, 0666); err != nil {
+	if err := os.MkdirAll(`cfg`, 0755); err != nil {
 		log.Fatalln(err)
 	}
 	successipfilename = `result/success.ip_` + tm

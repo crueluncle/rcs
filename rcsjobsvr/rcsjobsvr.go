@@ -62,10 +62,10 @@ func init() { //初始化操作
 	gob.Register(&agentmod.Rcs_ping_req{})
 	//处理日志
 	var err error
-	if err := os.MkdirAll(`log`, 0666); err != nil {
+	if err := os.MkdirAll(`log`, 0755); err != nil {
 		log.Fatalln(err)
 	}
-	if err := os.MkdirAll(`cfg`, 0666); err != nil {
+	if err := os.MkdirAll(`cfg`, 0755); err != nil {
 		log.Fatalln(err)
 	}
 	logfile, err = os.OpenFile("log/rcsjobsvr.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0777)

@@ -49,10 +49,10 @@ func getfilei(md5 string) *FileInfo {
 	return FileReg[md5]
 }
 func init() {
-	if err := os.MkdirAll(`log`, 0666); err != nil {
+	if err := os.MkdirAll(`log`, 0755); err != nil {
 		log.Fatalln(err)
 	}
-	if err := os.MkdirAll(`cfg`, 0666); err != nil {
+	if err := os.MkdirAll(`cfg`, 0755); err != nil {
 		log.Fatalln(err)
 	}
 	logfile, errs := os.OpenFile("log/rcsfileregistry.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0777)

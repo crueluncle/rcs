@@ -74,10 +74,10 @@ func init() {
 	gob.Register(&modules.Rcs_ping_req{})
 	file, _ := exec.LookPath(os.Args[0])
 	path := filepath.Dir(file)
-	if err := os.MkdirAll(filepath.Join(path, `log`), 0666); err != nil {
+	if err := os.MkdirAll(filepath.Join(path, `log`), 0755); err != nil {
 		log.Fatalln(err)
 	}
-	if err := os.MkdirAll(filepath.Join(path, `cfg`), 0666); err != nil {
+	if err := os.MkdirAll(filepath.Join(path, `cfg`), 0755); err != nil {
 		log.Fatalln(err)
 	}
 	logfilename := filepath.Join(path, `log/rcsagent.log`)

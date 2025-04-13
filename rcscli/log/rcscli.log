@@ -1,0 +1,23 @@
+Usage: ./rcscli[-t|-tf] <targets|targetsfile> <module.function>
+-----------------------------------------------------------------------------------------------------------------
+module.function belows:
+file.push          -- for push local file to remote targets
+file.pull          -- for pull remote file on targets to localhost
+file.cp            -- run 'copy' command on remote targets for copy file or directory
+file.del           -- run 'delete' command on remote targets for delete file or directory
+file.rename        -- run 'rename' command on remote targets for rename file or directory
+file.grep          -- run 'grep' command on remote targets for grep file content
+file.replace       -- run 'replace' command on remote targets for replace text file
+file.mreplace      -- run 'mreplace' command on remote targets for replace multiple text files
+file.md5sum        -- run 'md5sum' command on remote targets for compute file md5sum 
+file.ckmd5sum      -- run 'ckmd5sum' command on remote targets for check md5sum of files defined in md5sum file
+file.zip           -- run 'zip' command on remote targets for zip files or directory
+file.unzip         -- run 'unzip' command on remote targets for unzip zipdfile
+cmd.run            -- exec command on remote targets
+cmd.script         -- exec local scriptfile on remote targets,push to remote and run
+os.restart         -- restart remote targets
+os.shutdown        -- shutdown remote targets
+os.setpwd          -- set user password on remote targets
+firewall.setrules  -- set filewall rules on remote targets
+process.stop       -- stop the specified process on remote targets
+rcs.ping           -- for rcsping remote targets
