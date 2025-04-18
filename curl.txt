@@ -1,0 +1,27 @@
+
+添加一个对象：
+
+curl -X POST -d "{\"Score\":144,\"PlayerName\":\"weinysun\"}" http://127.0.0.1/v1/object
+
+返回一个相应的objectID:astaxie1373349756660423900
+
+查询一个对象
+
+curl -X GET http://127.0.0.1:8080/object/astaxie1373349756660423900
+
+查询全部的对象
+
+curl -X GET http://127.0.0.1:8080/object
+
+更新一个对象
+
+curl -X PUT -d "{\"Score\":10000}" http://127.0.0.1:8080/object/astaxie1373349756660423900
+
+删除一个对象
+
+curl -X DELETE http://127.0.0.1:8080/object/astaxie1373349756660423900
+
+curl -X POST -d "{\"Jid\":1004,\"Tasks\":[{\"Jid\":0,\"Tid\":0,\"Targets\":[\"127.0.0.1\",\"127.0.0.2\"],\"Req\":{\"Method\":\"ScriptService.Run\",\"Args\":{\"ScriptFile\":\"\",\"ScriptArgs\":null}}},{\"Jid\":0,\"Tid\":0,\"Targets\":[\"127.0.0.1\",\"127.0.0.2\"],\"Req\":{\"Method\":\"ScriptService.Run\",\"Args\":{\"ScriptFile\":\"\",\"ScriptArgs\":null}}}]}" http://127.0.0.1:9999/recvjob
+
+
+但是挥洒汗水和

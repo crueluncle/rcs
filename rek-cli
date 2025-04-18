@@ -1,0 +1,14 @@
+rek-cli 命令行接口:
+-check "show all agents"
+-t "127.0.0.1,127.0.0.2" 指定目标机器列表,-tf同时存在时,忽略-tf
+-tf iplist.txt 指定目标机器列表文件(格式:每行一个ip),-t同时存在时,忽略-tf
+-p 0|1 0:执行脚本,1:分发文件
+-f /home/www/aaa.txt 指定文件路径(脚本文件或者待分发的文件)
+-args  -p=0时生效,指定执行脚本的参数
+-dst -p=1时生效,指定分发文件的目标路径
+-v false:console是否输出详细结果,默认不输出,只给出成功、失败、超时数量，日志文件中始终保存详细结果
+
+
+问题：
+1.rekcli -t 58.211.28.182:53634 -p 1 -f test.bat -dst "d:\go-pro"
+ linux下执行rekcli,无法传入正确的dst参数

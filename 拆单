@@ -1,0 +1,15 @@
+
+
+下周目标：
+1.rcsagent自我操作模块
+2.rcsagent自动更新
+3.rpc 模块插件化
+
+4.jobsvr模块解耦，MQ?redis?
+5.控制信道、任务信道分离
+
+git rm rcscli/rcscli.go
+git rm rcsfileregistryapi/rcsfileregistry.go
+git rm rcsmaster/rcsmaster.go
+git rm rcsqueryapi/rcsqueryapi.go
+git rm rcstaskapi/rcstaskapi.go

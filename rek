@@ -1,0 +1,15 @@
+job:
+
+jid:0
+task1:abc
+task2:
+task3:
+
+webserver生成job的json描述字符串,将json串http-post提交给rekAPI
+rekAPI解析json串为job结构体并将job发往rekmaster,分配全局唯一的jid返回给webserver
+
+rekAPI接口设计
+1.提交job执行态
+2.执行task
+
+api&master---relay--agent  

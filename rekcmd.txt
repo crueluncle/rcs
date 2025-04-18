@@ -1,0 +1,6 @@
+﻿命令行接口：
+rekcmd.exe -t|-tf  -m modules.func args 
+
+rekcmd.exe -t="127.0.0.1" -m="Script.Run" d:\test.bat a b
+rekcmd.exe -tf="d:\ip.list" -m="Script.Run" d:\test.bat a b
+rekcmd.exe -tf="d:\ip.list" -m="File.Push" d:\test.bat  
